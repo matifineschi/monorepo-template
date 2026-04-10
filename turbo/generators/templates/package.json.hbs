@@ -1,0 +1,23 @@
+{
+  "name": "@repo/{{ name }}",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "biome check",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/biome-config": "*",
+    "@repo/typescript-config": "*",
+    "typescript": "catalog:"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  }
+}
