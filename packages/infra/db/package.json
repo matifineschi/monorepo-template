@@ -1,0 +1,48 @@
+{
+	"name": "@repo/db",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"dev": "tsc -p tsconfig.json --watch",
+		"lint": "biome check",
+		"typecheck": "tsc --noEmit",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push"
+	},
+	"devDependencies": {
+		"@repo/biome-config": "*",
+		"@repo/typescript-config": "*",
+		"@types/node": "catalog:",
+		"drizzle-kit": "^0.31.5",
+		"typescript": "catalog:"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./client": {
+			"types": "./src/client.ts",
+			"import": "./src/client.ts",
+			"default": "./src/client.ts"
+		},
+		"./operations/users": {
+			"types": "./src/operations/users.ts",
+			"import": "./src/operations/users.ts",
+			"default": "./src/operations/users.ts"
+		},
+		"./operations/user-auth": {
+			"types": "./src/operations/user-auth.ts",
+			"import": "./src/operations/user-auth.ts",
+			"default": "./src/operations/user-auth.ts"
+		}
+	},
+	"dependencies": {
+		"drizzle-orm": "^0.45.2",
+		"drizzle-zod": "^0.8.3",
+		"postgres": "^3.4.9"
+	}
+}

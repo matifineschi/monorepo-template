@@ -1,0 +1,4 @@
+interface:
+  display_name: "Form Action State"
+  short_description: "Use this by default for any form: server actions + useActionState/bind + Zod"
+  default_prompt: "Use $form-action-state for any form work. Implement submit handling with server actions and useActionState (bind when needed), then choose single-form or list-form reference by payload shape."
