@@ -38,7 +38,7 @@ type CookieOptions = {
 };
 
 function getPostAuthRedirect(input: LoginFormInput): string {
-	const basePath = input.redirect?.startsWith("/") ? input.redirect : "/";
+	const basePath = input.redirect?.startsWith("/") ? input.redirect : "/dashboard";
 	const url = new URL(basePath, "http://localhost");
 
 	if (input.priceId) {
