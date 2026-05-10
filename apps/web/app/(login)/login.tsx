@@ -15,10 +15,10 @@ export function Login({ mode = "signin" }: { mode?: "signin" | "signup" }) {
 	const redirect = searchParams.get("redirect");
 	const priceId = searchParams.get("priceId");
 	const inviteId = searchParams.get("inviteId");
-	const [state, formAction, pending] = useActionState<LoginActionState, FormData>(
-		mode === "signin" ? signIn : signUp,
-		{ error: "" },
-	);
+	const [state, formAction, pending] = useActionState<
+		LoginActionState,
+		FormData
+	>(mode === "signin" ? signIn : signUp, { error: "" });
 
 	return (
 		<div className="min-h-[100dvh] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">

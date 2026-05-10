@@ -38,7 +38,9 @@ type CookieOptions = {
 };
 
 function getPostAuthRedirect(input: LoginFormInput): string {
-	const basePath = input.redirect?.startsWith("/") ? input.redirect : "/dashboard";
+	const basePath = input.redirect?.startsWith("/")
+		? input.redirect
+		: "/dashboard";
 	const url = new URL(basePath, "http://localhost");
 
 	if (input.priceId) {
@@ -70,7 +72,15 @@ function parseSetCookieHeader(header: string): {
 	}
 
 	const name = cookiePair.slice(0, separatorIndex);
-	const value = cookiePair.slice(separatorIndex + 1);
+	const rawValue = cookiePair.slice(separatorIndex + 1);
+	// Set-Cookie header values are URL-encoded; Next.js cookies().set re-encodes,
+	// so decode here to avoid double-encoding (which breaks signature validation).
+	let value = rawValue;
+	try {
+		value = decodeURIComponent(rawValue);
+	} catch {
+		value = rawValue;
+	}
 	const options: CookieOptions = {};
 
 	for (const attribute of attributes) {
@@ -156,7 +166,11 @@ async function forwardAuthCookies(response: Response): Promise<void> {
 		}
 
 		if (Object.keys(parsedCookie.options).length > 0) {
-			cookieStore.set(parsedCookie.name, parsedCookie.value, parsedCookie.options);
+			cookieStore.set(
+				parsedCookie.name,
+				parsedCookie.value,
+				parsedCookie.options,
+			);
 			continue;
 		}
 

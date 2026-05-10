@@ -145,7 +145,10 @@ export default function HomePage() {
 				/>
 
 				<div className="mx-auto max-w-4xl text-center">
-					<Badge variant="secondary" className="mb-6 gap-1.5 px-3 py-1 text-xs font-medium">
+					<Badge
+						variant="secondary"
+						className="mb-6 gap-1.5 px-3 py-1 text-xs font-medium"
+					>
 						<span className="relative flex size-2">
 							<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
 							<span className="relative inline-flex size-2 rounded-full bg-primary" />
@@ -167,15 +170,21 @@ export default function HomePage() {
 					</h1>
 
 					<p className="mt-6 text-lg leading-8 text-muted-foreground max-w-2xl mx-auto">
-						A production-ready monorepo with Next.js, Better Auth, Drizzle ORM, and a full component
-						library. Skip the boilerplate and focus on what makes your product unique.
+						A production-ready monorepo with Next.js, Better Auth, Drizzle ORM,
+						and a full component library. Skip the boilerplate and focus on what
+						makes your product unique.
 					</p>
 
 					<div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
 						<Button size="lg" asChild className="h-11 px-8 text-sm font-medium">
 							<Link href="/sign-up">Get started for free</Link>
 						</Button>
-						<Button variant="outline" size="lg" asChild className="h-11 px-8 text-sm font-medium">
+						<Button
+							variant="outline"
+							size="lg"
+							asChild
+							className="h-11 px-8 text-sm font-medium"
+						>
 							<Link href="#features" className="flex items-center gap-2">
 								Explore features
 								<svg
@@ -208,8 +217,8 @@ export default function HomePage() {
 							Everything you need, nothing you don&apos;t
 						</h2>
 						<p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-							Carefully chosen technologies that work together seamlessly, so you can move fast
-							without breaking things.
+							Carefully chosen technologies that work together seamlessly, so
+							you can move fast without breaking things.
 						</p>
 					</div>
 
@@ -222,8 +231,12 @@ export default function HomePage() {
 								<div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-primary/8 text-primary ring-1 ring-primary/15 group-hover:bg-primary/12 transition-colors">
 									{feature.icon}
 								</div>
-								<h3 className="mb-2 font-semibold text-foreground">{feature.title}</h3>
-								<p className="text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
+								<h3 className="mb-2 font-semibold text-foreground">
+									{feature.title}
+								</h3>
+								<p className="text-sm leading-relaxed text-muted-foreground">
+									{feature.description}
+								</p>
 							</div>
 						))}
 					</div>
@@ -253,7 +266,8 @@ export default function HomePage() {
 								Ready to build something great?
 							</h2>
 							<p className="mt-3 text-sm text-white/60 max-w-md mx-auto">
-								Clone the repo, configure your environment, and you&apos;re live in minutes.
+								Clone the repo, configure your environment, and you&apos;re live
+								in minutes.
 							</p>
 							<div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
 								<Button

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { Button } from "@repo/ui/components/button";
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default function PublicLayout({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
 	return (
 		<div className="min-h-svh flex flex-col bg-background">
 			<header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-md">
@@ -22,7 +26,9 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 								<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
 							</svg>
 						</div>
-						<span className="font-semibold text-foreground tracking-tight">Acme</span>
+						<span className="font-semibold text-foreground tracking-tight">
+							Acme
+						</span>
 					</Link>
 
 					{/* Center nav */}
