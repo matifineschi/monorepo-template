@@ -8,8 +8,8 @@
 		"dev": "tsc -p tsconfig.json --watch",
 		"lint": "biome check",
 		"typecheck": "tsc --noEmit",
-		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
+		"db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+		"db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
 		"db:push": "drizzle-kit push"
 	},
 	"devDependencies": {

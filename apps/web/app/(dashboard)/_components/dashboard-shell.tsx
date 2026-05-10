@@ -97,7 +97,9 @@ function AppSidebar({ user }: { user: User }) {
 								</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-semibold">Acme</span>
-									<span className="truncate text-xs text-muted-foreground">Workspace</span>
+									<span className="truncate text-xs text-muted-foreground">
+										Workspace
+									</span>
 								</div>
 							</Link>
 						</SidebarMenuButton>
@@ -166,7 +168,9 @@ function AppSidebar({ user }: { user: User }) {
 									</Avatar>
 									<div className="grid flex-1 text-left text-sm leading-tight">
 										<span className="truncate font-medium">{user.name}</span>
-										<span className="truncate text-xs text-muted-foreground">{user.email}</span>
+										<span className="truncate text-xs text-muted-foreground">
+											{user.email}
+										</span>
 									</div>
 									<svg
 										className="ml-auto size-4 text-muted-foreground"
@@ -197,13 +201,18 @@ function AppSidebar({ user }: { user: User }) {
 										</Avatar>
 										<div className="grid flex-1 text-left text-sm leading-tight">
 											<span className="truncate font-medium">{user.name}</span>
-											<span className="truncate text-xs text-muted-foreground">{user.email}</span>
+											<span className="truncate text-xs text-muted-foreground">
+												{user.email}
+											</span>
 										</div>
 									</div>
 								</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem asChild>
-									<Link href="/dashboard/settings/profile" className="cursor-pointer">
+									<Link
+										href="/dashboard/settings/profile"
+										className="cursor-pointer"
+									>
 										<UserIcon className="size-4" />
 										Profile
 									</Link>
@@ -235,7 +244,10 @@ function AppSidebar({ user }: { user: User }) {
 
 function DashboardHeader({ user }: { user: User }) {
 	const pathname = usePathname();
-	const segments = pathname.replace("/dashboard", "").split("/").filter(Boolean);
+	const segments = pathname
+		.replace("/dashboard", "")
+		.split("/")
+		.filter(Boolean);
 
 	return (
 		<header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/60 px-4">
@@ -244,7 +256,10 @@ function DashboardHeader({ user }: { user: User }) {
 
 			{/* Breadcrumb */}
 			<nav className="flex items-center gap-1 text-sm text-muted-foreground">
-				<Link href="/dashboard" className="hover:text-foreground transition-colors">
+				<Link
+					href="/dashboard"
+					className="hover:text-foreground transition-colors"
+				>
 					Dashboard
 				</Link>
 				{segments.map((seg, i) => (
@@ -252,7 +267,9 @@ function DashboardHeader({ user }: { user: User }) {
 						<span className="text-border">/</span>
 						<span
 							className={
-								i === segments.length - 1 ? "font-medium text-foreground" : "hover:text-foreground"
+								i === segments.length - 1
+									? "font-medium text-foreground"
+									: "hover:text-foreground"
 							}
 						>
 							{seg.charAt(0).toUpperCase() + seg.slice(1)}
@@ -263,11 +280,19 @@ function DashboardHeader({ user }: { user: User }) {
 
 			{/* Right side actions */}
 			<div className="ml-auto flex items-center gap-1">
-				<Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					className="text-muted-foreground hover:text-foreground"
+				>
 					<SearchIcon className="size-4" />
 					<span className="sr-only">Search</span>
 				</Button>
-				<Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					className="text-muted-foreground hover:text-foreground"
+				>
 					<BellIcon className="size-4" />
 					<span className="sr-only">Notifications</span>
 				</Button>

@@ -1,6 +1,12 @@
 import { auth } from "@repo/auth";
 import { headers } from "next/headers";
-import { ArrowUpRightIcon, BarChart3Icon, FolderIcon, UsersIcon, ZapIcon } from "lucide-react";
+import {
+	ArrowUpRightIcon,
+	BarChart3Icon,
+	FolderIcon,
+	UsersIcon,
+	ZapIcon,
+} from "lucide-react";
 import { Card } from "@repo/ui/components/card";
 
 const stats = [
@@ -95,9 +101,15 @@ export default async function DashboardPage() {
 					>
 						<div className="flex items-start justify-between">
 							<div>
-								<p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
-								<p className="mt-1.5 text-2xl font-bold tracking-tight">{stat.value}</p>
-								<p className="mt-1 text-xs text-muted-foreground">{stat.description}</p>
+								<p className="text-xs font-medium text-muted-foreground">
+									{stat.label}
+								</p>
+								<p className="mt-1.5 text-2xl font-bold tracking-tight">
+									{stat.value}
+								</p>
+								<p className="mt-1 text-xs text-muted-foreground">
+									{stat.description}
+								</p>
 							</div>
 							<div className="flex size-9 items-center justify-center rounded-lg bg-muted/60">
 								<stat.icon className="size-4 text-muted-foreground" />
@@ -111,7 +123,9 @@ export default async function DashboardPage() {
 			<div className="grid gap-6 lg:grid-cols-3">
 				{/* Quick actions */}
 				<div className="lg:col-span-1">
-					<h2 className="mb-4 text-sm font-semibold text-foreground">Quick actions</h2>
+					<h2 className="mb-4 text-sm font-semibold text-foreground">
+						Quick actions
+					</h2>
 					<div className="space-y-2">
 						{quickActions.map((action) => (
 							<a
@@ -123,8 +137,12 @@ export default async function DashboardPage() {
 									<action.icon className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
 								</div>
 								<div className="flex-1 min-w-0">
-									<p className="text-sm font-medium leading-none">{action.title}</p>
-									<p className="mt-1 text-xs text-muted-foreground truncate">{action.description}</p>
+									<p className="text-sm font-medium leading-none">
+										{action.title}
+									</p>
+									<p className="mt-1 text-xs text-muted-foreground truncate">
+										{action.description}
+									</p>
 								</div>
 								<ArrowUpRightIcon className="size-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
 							</a>
@@ -134,7 +152,9 @@ export default async function DashboardPage() {
 
 				{/* Recent activity */}
 				<div className="lg:col-span-2">
-					<h2 className="mb-4 text-sm font-semibold text-foreground">Recent activity</h2>
+					<h2 className="mb-4 text-sm font-semibold text-foreground">
+						Recent activity
+					</h2>
 					<div className="rounded-xl border border-border/60 bg-card overflow-hidden">
 						<div className="flex flex-col items-center justify-center py-16 px-6 text-center">
 							<div className="flex size-12 items-center justify-center rounded-xl bg-muted/60 mb-4">
@@ -142,7 +162,8 @@ export default async function DashboardPage() {
 							</div>
 							<p className="text-sm font-medium">No activity yet</p>
 							<p className="mt-1 text-xs text-muted-foreground max-w-xs">
-								Activity will appear here once you and your team start using the workspace.
+								Activity will appear here once you and your team start using the
+								workspace.
 							</p>
 						</div>
 					</div>

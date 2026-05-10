@@ -1,135 +1,122 @@
-# Turborepo starter
+# Monorepo Template
 
-This Turborepo starter is maintained by the Turborepo core team.
+A full-stack TypeScript monorepo boilerplate built with Turborepo, Bun, Next.js, Hono, Drizzle, and better-auth.
 
-## Using this example
+## Stack
 
-Run the following command:
+- **Runtime**: [Bun](https://bun.sh) + [Node.js](https://nodejs.org)
+- **Monorepo**: [Turborepo](https://turborepo.dev)
+- **Frontend**: [Next.js 16](https://nextjs.org) with React 19
+- **Backend API**: [Hono](https://hono.dev) (lightweight, edge-ready)
+- **Database**: [PostgreSQL 17](https://www.postgresql.org) via Docker
+- **ORM**: [Drizzle ORM](https://orm.drizzle.team) with migrations and RLS policies
+- **Auth**: [better-auth](https://www.better-auth.com) (email + password)
+- **UI**: [shadcn/ui](https://ui.shadcn.com) component library with [Tailwind CSS v4](https://tailwindcss.com)
+- **Linting/Formatting**: [Biome](https://biomejs.dev) (replaces ESLint + Prettier)
+- **Language**: TypeScript (strict mode)
+
+## Prerequisites
+
+Install system dependencies via Homebrew:
 
 ```sh
-npx create-turbo@latest
+brew bundle
 ```
 
-## What's inside?
+This installs Bun, Node.js, PostgreSQL CLI, Docker, and Git.
 
-This Turborepo includes the following packages/apps:
+## Getting Started
 
-### Apps and Packages
+```sh
+# Install dependencies
+bun install
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/biome-config`: `biome` configurations
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+# Start the database
+docker compose up -d
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+# Set up environment variables
+cp .env.example .env  # then fill in values
 
-### Utilities
+# Run database migrations
+cd packages/infra/db && bun run db:migrate && cd -
 
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [Biome](https://biomejs.dev/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-bun dlx turbo build
-bun exec turbo build
+# Start all apps
+bun run dev
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+The web app runs on `http://localhost:3000` and the API on `http://localhost:3001`.
+
+## Project Structure
 
 ```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
+apps/
+  web/              Next.js frontend — public pages, auth flow, dashboard
+  api/              Hono backend API — REST endpoints, CORS, health checks
+packages/
+  ui/               Shared React component library (shadcn/ui)
+  biome-config/     Shared Biome lint/format configurations
+  typescript-config/ Shared TypeScript configurations
+  infra/
+    db/             Drizzle ORM — schema, migrations, typed queries
+    auth/           better-auth — authentication config and client
 ```
 
-### Develop
+## Scripts
 
-To develop all apps and packages, run the following command:
+| Command | Description |
+|---|---|
+| `bun run dev` | Start all apps and packages in dev mode |
+| `bun run build` | Build everything |
+| `bun run lint` | Lint all packages with Biome |
+| `bun run typecheck` | Type-check all packages |
+| `bun run format` | Format all files with Biome |
+| `bun run db:up` | Start PostgreSQL container |
+| `bun run db:down` | Stop PostgreSQL container |
+| `bun run db:reset` | Destroy and recreate the database |
+| `bun run knip` | Find unused code and dependencies |
+
+## Environment Variables
+
+Create a `.env` file in the project root:
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
+DATABASE_URL=postgres://postgres:postgres@localhost:5430/postgres
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=your-secret-here
+CORS_ORIGIN=http://localhost:3000
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Database
 
+PostgreSQL runs in Docker on port **5430** (not the default 5432, to avoid conflicts).
+
+```sh
+# Generate a migration after modifying schema
+cd packages/infra/db && bun run db:generate
+
+# Apply migrations
+cd packages/infra/db && bun run db:migrate
+
+# Push schema directly (dev only)
+cd packages/infra/db && bun run db:push
 ```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
+
+A [Drizzle Gateway](https://github.com/drizzle-team/gateway) UI is available at `http://localhost:3002` for database inspection.
+
+## Adding New Packages
+
+Use the built-in Turborepo generator:
+
+```sh
+bun run gen:package
+```
+
+## Filtering Tasks
+
+Run commands for a specific app or package:
+
+```sh
 turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
+turbo dev --filter=api
+turbo build --filter=@repo/db
 ```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-bun exec turbo login
-bun exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
