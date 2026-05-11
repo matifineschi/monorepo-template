@@ -17,8 +17,10 @@ bun run dev           # start all apps in parallel
 apps/
   web/          → Next.js 16 frontend (port 3000)
   api/          → Hono backend API (port 3001)
+  workers/      → BullMQ background workers (email, data export)
 packages/
   ui/           → Shared React component library (shadcn/ui + Tailwind v4)
+  queues/       → Shared BullMQ queue definitions and job types
   biome-config/ → Shared Biome lint/format configs
   typescript-config/ → Shared tsconfig presets
   infra/
@@ -62,6 +64,7 @@ BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=<random-secret>
 CORS_ORIGIN=http://localhost:3000    # for the API app
 PORT=3001                            # for the API app (default: 3001)
+REDIS_URL=redis://localhost:6379     # for the API app and workers
 ```
 
 ## Adding a New Package
