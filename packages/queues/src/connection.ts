@@ -1,13 +1,9 @@
 import IORedis from "ioredis";
 
-function getRedisUrl(): string {
-	const url = process.env.REDIS_URL;
-	if (!url) throw new Error("Missing required environment variable: REDIS_URL");
-	return url;
-}
+import { queuesEnv } from "./env";
 
 export function createRedisConnection(): IORedis {
-	return new IORedis(getRedisUrl(), {
+	return new IORedis(queuesEnv.REDIS_URL, {
 		maxRetriesPerRequest: null,
 	});
 }

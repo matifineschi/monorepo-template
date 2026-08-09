@@ -25,8 +25,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env files (can opt-in for commiting if needed)
+# env files. The negation is required: a bare `.env*` here would win inside this
+# directory and silently leave apps/web/.env.example untracked.
 .env*
+!.env.example
 
 # vercel
 .vercel

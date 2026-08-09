@@ -1,23 +1,35 @@
 {
   "name": "@repo/{{ name }}",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "git clean -xdf .cache .turbo node_modules",
     "lint": "biome check",
-    "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "@repo/biome-config": "*",
-    "@repo/typescript-config": "*",
-    "typescript": "catalog:"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test src"
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }{{#if needsEnv}},
+    "./env": {
+      "types": "./src/env.ts",
+      "import": "./src/env.ts",
+      "default": "./src/env.ts"
+    }{{/if}}
+  },
+{{#if needsEnv}}  "dependencies": {
+    "@repo/env": "workspace:*",
+    "@t3-oss/env-core": "catalog:",
+    "zod": "catalog:"
+  },
+{{/if}}  "devDependencies": {
+    "@repo/biome-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   }
 }

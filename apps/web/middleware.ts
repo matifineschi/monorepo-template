@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 // Cookie name set by better-auth
 const SESSION_COOKIE_NAME = "better-auth.session_token";

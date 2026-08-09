@@ -1,5 +1,5 @@
 import { auth } from "@repo/auth";
-import { headers } from "next/headers";
+import { Card } from "@repo/ui/components/card";
 import {
 	ArrowUpRightIcon,
 	BarChart3Icon,
@@ -7,7 +7,7 @@ import {
 	UsersIcon,
 	ZapIcon,
 } from "lucide-react";
-import { Card } from "@repo/ui/components/card";
+import { headers } from "next/headers";
 
 const stats = [
 	{

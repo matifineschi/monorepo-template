@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/create-next-app).
+# web
 
-## Getting Started
+Next.js 16 frontend: public marketing pages, the better-auth sign-in/sign-up
+flow, and a session-guarded dashboard.
 
-First, run the development server:
+Run it from the repo root — this app needs Postgres up and its sibling services
+running:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```sh
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Or on its own, once `apps/web/.env` exists:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```sh
+turbo dev --filter=web
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load Inter, a custom Google Font.
+Serves on http://localhost:3000.
 
-## Learn More
+## Notes
 
-To learn more about Next.js, take a look at the following resources:
+- **Bun only.** Do not use `npm`, `yarn`, or `pnpm` in this repo.
+- **Environment variables** are validated at boot. `instrumentation.ts` imports
+  `env.ts` purely to force that — the `void env` in it is load-bearing, not dead
+  code. Copy `.env.example` to `.env` before starting.
+- `NEXT_PUBLIC_APP_URL` is inlined into the client bundle at build time, so
+  changing it needs a rebuild rather than a restart.
+- **No bucket credentials here.** File uploads go through a presigned URL issued
+  by the API, so the web server never holds `STORAGE_*` values.
+- `middleware.ts` is kept env-free deliberately: it runs on the edge runtime, and
+  importing `env.ts` would drag `postgres` into that bundle.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See the [root README](../../README.md) and [AGENTS.md](../../AGENTS.md).

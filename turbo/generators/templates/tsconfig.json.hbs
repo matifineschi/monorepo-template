@@ -1,11 +1,11 @@
 {
-"extends": "{{ tsconfigExtends }}",
-"compilerOptions": {
-"rootDir": "src",
-"outDir": "dist",
-"module": "ESNext",
-"moduleResolution": "bundler"
-},
-"include": ["src"],
-"exclude": ["node_modules", "dist"]
+	"extends": "@repo/typescript-config/base.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"types": ["bun-types", "node"],
+		"module": "ESNext",
+		"moduleResolution": "bundler"
+	},
+	"include": ["src", "tests", "test-setup.ts"],
+	"exclude": ["node_modules"]
 }

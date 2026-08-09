@@ -1,14 +1,14 @@
-import { usersTable } from "./users";
 import {
 	accounts as userAuthAccounts,
 	accountsRelations as userAuthAccountsRelations,
+	userAuthSchema,
 	sessions as userAuthSessions,
 	sessionsRelations as userAuthSessionsRelations,
-	userAuthSchema,
 	users as userAuthUsers,
 	usersRelations as userAuthUsersRelations,
 	verifications as userAuthVerifications,
 } from "./user-auth";
+import { usersTable } from "./users";
 
 export const publicSchema = {
 	users: usersTable,

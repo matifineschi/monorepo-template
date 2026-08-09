@@ -1,11 +1,11 @@
 {
-	"extends": "../../typescript-config/base.json",
+	"extends": "@repo/typescript-config/base.json",
 	"compilerOptions": {
 		"noEmit": true,
-		"types": ["node"],
+		"types": ["bun-types", "node"],
 		"module": "ESNext",
 		"moduleResolution": "bundler"
 	},
-	"include": ["src", "drizzle.config.ts"],
+	"include": ["src", "tests", "test-setup.ts", "drizzle.config.ts"],
 	"exclude": ["node_modules", "dist"]
 }

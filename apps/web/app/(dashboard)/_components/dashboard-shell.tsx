@@ -1,17 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Avatar, AvatarFallback } from "@repo/ui/components/avatar";
+import { Button } from "@repo/ui/components/button";
 import {
-	BarChart3Icon,
-	BellIcon,
-	FolderIcon,
-	LayoutDashboardIcon,
-	LogOutIcon,
-	SearchIcon,
-	SettingsIcon,
-	UserIcon,
-} from "lucide-react";
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@repo/ui/components/dropdown-menu";
+import { Separator } from "@repo/ui/components/separator";
 import {
 	Sidebar,
 	SidebarContent,
@@ -28,17 +27,18 @@ import {
 	SidebarRail,
 	SidebarTrigger,
 } from "@repo/ui/components/sidebar";
-import { Avatar, AvatarFallback } from "@repo/ui/components/avatar";
-import { Button } from "@repo/ui/components/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@repo/ui/components/dropdown-menu";
-import { Separator } from "@repo/ui/components/separator";
+	BarChart3Icon,
+	BellIcon,
+	FolderIcon,
+	LayoutDashboardIcon,
+	LogOutIcon,
+	SearchIcon,
+	SettingsIcon,
+	UserIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
 
 const navMain = [

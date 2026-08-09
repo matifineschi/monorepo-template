@@ -7,14 +7,21 @@
 		"dev": "bun run --hot src/index.ts",
 		"build": "bun build src/index.ts --outdir dist --target bun",
 		"start": "bun run dist/index.js",
-		"lint": "biome check --write",
-		"typecheck": "tsc --noEmit"
+		"lint": "biome check",
+		"typecheck": "tsc --noEmit",
+		"test": "bun test src",
+		"test:integration": "bun test tests/integration"
 	},
 	"dependencies": {
-		"@hono/node-server": "^1.13.8",
 		"@repo/auth": "workspace:*",
 		"@repo/db": "workspace:*",
-		"hono": "^4.7.11"
+		"@repo/env": "workspace:*",
+		"@repo/queues": "workspace:*",
+		"@repo/storage": "workspace:*",
+		"@t3-oss/env-core": "catalog:",
+		"bullmq": "^5.56.3",
+		"hono": "^4.7.11",
+		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@repo/biome-config": "workspace:*",

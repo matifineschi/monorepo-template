@@ -1,29 +1,42 @@
 {
 	"$schema": "https://turborepo.dev/schema.json",
 	"ui": "tui",
+	"globalEnv": ["NODE_ENV", "SKIP_ENV_VALIDATION"],
+	"globalDependencies": ["**/.env.example"],
 	"tasks": {
 		"build": {
-			"dependsOn": [
-				"^build"
-			],
-			"inputs": [
-				"$TURBO_DEFAULT$",
-				".env*"
-			],
-			"outputs": [
-				".next/**",
-				"!.next/cache/**",
-				"dist/**"
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"outputs": [".next/**", "!.next/cache/**", "dist/**"],
+			"env": [
+				"NEXT_PUBLIC_*",
+				"DATABASE_URL",
+				"BETTER_AUTH_URL",
+				"BETTER_AUTH_SECRET",
+				"CORS_ORIGIN",
+				"PORT",
+				"REDIS_URL",
+				"STORAGE_*"
 			]
 		},
 		"lint": {
-			"dependsOn": [
-				"^lint"
-			]
+			"dependsOn": ["^lint"]
 		},
 		"typecheck": {
-			"dependsOn": [
-				"^typecheck"
+			"dependsOn": ["^typecheck"]
+		},
+		"test": {
+			"dependsOn": [],
+			"outputs": []
+		},
+		"test:integration": {
+			"cache": false,
+			"passThroughEnv": [
+				"DATABASE_URL",
+				"REDIS_URL",
+				"BETTER_AUTH_URL",
+				"BETTER_AUTH_SECRET",
+				"STORAGE_*"
 			]
 		},
 		"clean": {

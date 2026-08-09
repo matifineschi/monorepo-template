@@ -3,16 +3,15 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "tsc -p tsconfig.json",
 		"clean": "git clean -xdf .cache .turbo dist node_modules",
-		"dev": "tsc -p tsconfig.json --watch",
 		"lint": "biome check",
 		"typecheck": "tsc --noEmit",
+		"test": "bun test src",
 		"gen:schema": "SKIP_ENV_VALIDATION=1 bun x auth@latest generate --output ../db/src/schema/user-auth.ts && ./patch-schema.sh"
 	},
 	"devDependencies": {
-		"@repo/biome-config": "*",
-		"@repo/typescript-config": "*",
+		"@repo/biome-config": "workspace:*",
+		"@repo/typescript-config": "workspace:*",
 		"@types/node": "catalog:",
 		"typescript": "catalog:"
 	},
@@ -26,10 +25,18 @@
 			"types": "./src/client.ts",
 			"import": "./src/client.ts",
 			"default": "./src/client.ts"
+		},
+		"./env": {
+			"types": "./src/env.ts",
+			"import": "./src/env.ts",
+			"default": "./src/env.ts"
 		}
 	},
 	"dependencies": {
 		"@repo/db": "workspace:*",
-		"better-auth": "^1.6.2"
+		"@repo/env": "workspace:*",
+		"@t3-oss/env-core": "catalog:",
+		"better-auth": "^1.6.2",
+		"zod": "catalog:"
 	}
 }

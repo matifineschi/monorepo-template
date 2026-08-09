@@ -1,12 +1,14 @@
-function requireEnv(name: string): string {
-	const value = process.env[name];
-	if (!value) {
-		throw new Error(`Missing required environment variable: ${name}`);
-	}
-	return value;
-}
+import { shouldSkipEnvValidation } from "@repo/env";
+import { createEnv } from "@t3-oss/env-core";
+import { z } from "zod";
 
-export const authEnv = {
-	BETTER_AUTH_URL: requireEnv("BETTER_AUTH_URL"),
-	BETTER_AUTH_SECRET: requireEnv("BETTER_AUTH_SECRET"),
-};
+export const authEnv = createEnv({
+	emptyStringAsUndefined: true,
+	runtimeEnv: process.env,
+	server: {
+		/** Origin that issues the session cookie — the web app, not the API. */
+		BETTER_AUTH_URL: z.url(),
+		BETTER_AUTH_SECRET: z.string().min(1),
+	},
+	skipValidation: shouldSkipEnvValidation(),
+});

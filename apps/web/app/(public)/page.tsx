@@ -1,6 +1,6 @@
-import Link from "next/link";
-import { Button } from "@repo/ui/components/button";
 import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import Link from "next/link";
 
 const features = [
 	{

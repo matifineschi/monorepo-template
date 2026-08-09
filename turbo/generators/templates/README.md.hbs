@@ -1,4 +1,30 @@
-# {{ name }}
+# @repo/{{ name }}
 
-Internal workspace package at `{{ pathPrefix }}/{{ name }}`. Root formatting uses Prettier (`bun run format` from the repo root); this package uses Biome
-for lint via `bun run lint`.
+Internal workspace package at `{{ pathPrefix }}/{{ name }}`.
+
+Consumed as TypeScript source through its `exports` map — there is no build step.
+Import it as `@repo/{{ name }}` after adding `"@repo/{{ name }}": "workspace:*"` to
+the consuming workspace's dependencies.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `bun run lint` | Biome check for this package (no ESLint, no Prettier) |
+| `bun run typecheck` | `tsc --noEmit` |
+| `bun run test` | Unit tests in `src/**/__tests__/*.test.ts` |
+
+Run `bun run format` from the repo root to apply fixes across the monorepo.
+
+## Conventions
+
+- Unit tests live beside the code in `src/**/__tests__/*.test.ts`.
+- Integration tests (anything touching Postgres, Redis, or the bucket) go in
+  `tests/integration/*.test.ts` and run via a separate `test:integration` script.
+  The two directories must stay disjoint — `bun test <path>` filters by substring.
+{{#if needsEnv}}- This package owns its environment variables in `src/env.ts` and exposes them
+  via the `./env` subpath. Apps compose them with `extends: [...]` in their own
+  `env.ts`. Add any new variable to `src/env.ts` **and** every consuming app's
+  `.env.example` in the same commit.
+{{/if}}
+See [AGENTS.md](../../AGENTS.md) for the full set of repo conventions.

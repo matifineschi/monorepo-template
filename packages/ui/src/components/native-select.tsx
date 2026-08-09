@@ -1,7 +1,6 @@
-import * as React from "react";
-import { ChevronDownIcon } from "lucide-react";
-
 import { cn } from "@repo/ui/src/lib/utils";
+import { ChevronDownIcon } from "lucide-react";
+import * as React from "react";
 
 function NativeSelect({
 	className,

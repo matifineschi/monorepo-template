@@ -1,9 +1,8 @@
-import * as React from "react";
+import { Separator } from "@repo/ui/src/components/separator";
+import { cn } from "@repo/ui/src/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
-
-import { cn } from "@repo/ui/src/lib/utils";
-import { Separator } from "@repo/ui/src/components/separator";
+import * as React from "react";
 
 function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
 	return (

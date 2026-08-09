@@ -1,8 +1,13 @@
+import { env } from "./env";
 import { startEmailWorker } from "./workers/email.worker";
+import { startFileCleanupWorker } from "./workers/file-cleanup.worker";
 
-const workers = [startEmailWorker()];
+const workers = [
+	startEmailWorker({ concurrency: env.WORKER_CONCURRENCY }),
+	startFileCleanupWorker({ concurrency: env.WORKER_CONCURRENCY }),
+];
 
-console.log(`[workers] Started ${workers.length} workers`);
+console.log(`[workers] Started ${workers.length} workers (${env.NODE_ENV})`);
 
 async function shutdown() {
 	console.log("[workers] Shutting down...");

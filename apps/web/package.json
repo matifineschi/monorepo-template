@@ -7,12 +7,15 @@
 		"dev": "next dev --port 3000",
 		"build": "next build",
 		"start": "next start",
-		"lint": "biome check --write",
+		"lint": "biome check",
 		"typecheck": "next typegen && tsc --noEmit"
 	},
 	"dependencies": {
 		"@repo/auth": "workspace:*",
+		"@repo/db": "workspace:*",
+		"@repo/env": "workspace:*",
 		"@repo/ui": "workspace:*",
+		"@t3-oss/env-nextjs": "catalog:",
 		"@tailwindcss/postcss": "catalog:",
 		"better-auth": "^1.6.2",
 		"lucide-react": "^1.8.0",
@@ -20,8 +23,7 @@
 		"postcss": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
-		"tailwindcss": "catalog:",
-		"zod": "^4.1.12"
+		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@repo/biome-config": "workspace:*",

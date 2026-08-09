@@ -3,12 +3,14 @@ import type { PlopTypes } from "@turbo/gen";
 type PackageGenData = {
 	name: string;
 	pathPrefix: "packages" | "packages/infra";
+	needsEnv: boolean;
 	turbo: { paths: { root: string } };
 };
 
 export default function generator(plop: PlopTypes.NodePlopAPI): void {
 	plop.setGenerator("package", {
-		description: "Internal workspace package under packages/ or packages/infra/ (Biome + tsc library layout)",
+		description:
+			"Internal workspace package under packages/ or packages/infra/ (Biome + bun test, source-only exports)",
 		prompts: [
 			{
 				type: "list",
@@ -17,7 +19,10 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 				default: "packages",
 				choices: [
 					{ name: "packages/<name> (top-level workspace package)", value: "packages" },
-					{ name: "packages/infra/<name> (infra workspace package)", value: "packages/infra" },
+					{
+						name: "packages/infra/<name> (owns a connection to an external system)",
+						value: "packages/infra",
+					},
 				],
 			},
 			{
@@ -34,15 +39,23 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 					return true;
 				},
 			},
+			{
+				// Asked rather than always generated: most packages read no env, and an
+				// empty createEnv plus three unused deps is noise knip would flag. The
+				// prompt is how the convention gets taught, at the moment it's relevant.
+				type: "confirm",
+				name: "needsEnv",
+				message: "Does this package read environment variables?",
+				default: false,
+			},
 		],
 		actions: (data) => {
-			const { name, pathPrefix, turbo } = data as PackageGenData;
+			const { name, pathPrefix, needsEnv, turbo } = data as PackageGenData;
 			const root = turbo.paths.root;
 			const dir = `${root}/${pathPrefix}/${name}`;
-			const tsconfigExtends =
-				pathPrefix === "packages/infra" ? "../../typescript-config/base.json" : "../typescript-config/base.json";
+			const camelName = name.replace(/-([a-z0-9])/g, (_, char: string) => char.toUpperCase());
 
-			return [
+			const actions: PlopTypes.ActionType[] = [
 				{
 					type: "add",
 					path: `${dir}/package.json`,
@@ -52,7 +65,6 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 					type: "add",
 					path: `${dir}/tsconfig.json`,
 					templateFile: "templates/tsconfig.json.hbs",
-					data: { tsconfigExtends },
 				},
 				{
 					type: "add",
@@ -70,7 +82,36 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 					path: `${dir}/src/index.ts`,
 					template: "export {};\n",
 				},
+				// Test scaffolding always ships: it is a handful of lines, always
+				// correct, and means a package generated on day 40 is covered by
+				// `turbo run test` from birth rather than whenever someone remembers.
+				{
+					type: "add",
+					path: `${dir}/bunfig.toml`,
+					templateFile: "templates/bunfig.toml.hbs",
+				},
+				{
+					type: "add",
+					path: `${dir}/test-setup.ts`,
+					templateFile: "templates/test-setup.ts.hbs",
+				},
+				{
+					type: "add",
+					path: `${dir}/src/__tests__/index.test.ts`,
+					templateFile: "templates/index.test.ts.hbs",
+				},
 			];
+
+			if (needsEnv) {
+				actions.push({
+					type: "add",
+					path: `${dir}/src/env.ts`,
+					templateFile: "templates/env.ts.hbs",
+					data: { camelName },
+				});
+			}
+
+			return actions;
 		},
 	});
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useActionState } from "react";
-import { useSearchParams } from "next/navigation";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import { Label } from "@repo/ui/components/label";
 import { CircleIcon, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useActionState } from "react";
 import type { LoginActionState } from "./actions";
 import { signIn, signUp } from "./actions";
 

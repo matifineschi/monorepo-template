@@ -9,7 +9,8 @@
 		"paths": {
 			"@repo/ui/src/*": ["./src/*"]
 		},
-		"jsx": "react-jsx"
+		"jsx": "react-jsx",
+		"types": ["bun-types", "node"]
 	},
 	"include": ["src"],
 	"exclude": ["node_modules", "dist"]

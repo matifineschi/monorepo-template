@@ -1,7 +1,31 @@
 {
 	"$schema": "https://unpkg.com/knip@6/schema.json",
 	"tags": ["-lintignore"],
+	"ignoreUnresolved": ["next"],
 	"workspaces": {
-		".": {}
+		".": {
+			"entry": ["turbo/generators/config.ts"]
+		},
+		"apps/web": {
+			"entry": ["env.ts"]
+		},
+		"apps/api": {
+			"entry": ["src/index.ts", "tests/integration/*.test.ts"]
+		},
+		"apps/workers": {
+			"entry": ["src/index.ts", "tests/integration/*.test.ts"]
+		},
+		"packages/queues": {
+			"entry": ["tests/integration/*.test.ts"]
+		},
+		"packages/ui": {
+			"entry": ["src/components/*.tsx", "src/hooks/*.ts", "src/lib/*.ts"]
+		},
+		"packages/infra/db": {
+			"entry": ["src/operations/*.ts", "tests/integration/*.test.ts"]
+		},
+		"packages/infra/storage": {
+			"entry": ["tests/integration/*.test.ts"]
+		}
 	}
 }

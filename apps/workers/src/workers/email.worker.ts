@@ -1,29 +1,53 @@
+import type { SendWelcomeEmailJob } from "@repo/queues";
 import { createRedisConnection, QUEUE_NAMES } from "@repo/queues";
 import { Worker } from "bullmq";
-import type { SendWelcomeEmailJob } from "@repo/queues";
 
-export function startEmailWorker() {
+/**
+ * Swap this for Resend / Postmark / SES. It is injected rather than imported so
+ * the job body stays assertable in a test without a mail provider.
+ */
+export type EmailSender = (message: {
+	to: string;
+	subject: string;
+	body: string;
+}) => Promise<void>;
+
+const consoleEmailSender: EmailSender = async (message) => {
+	console.log(`[email-worker] -> ${message.to}: ${message.subject}`);
+};
+
+/** The job body, with no BullMQ or Redis anywhere near it. */
+export async function processEmailJob(
+	data: SendWelcomeEmailJob,
+	send: EmailSender = consoleEmailSender,
+): Promise<void> {
+	const { type } = data;
+
+	switch (type) {
+		case "send-welcome-email": {
+			await send({
+				to: data.email,
+				subject: "Welcome!",
+				body: `Welcome, ${data.name}! (user: ${data.userId})`,
+			});
+			break;
+		}
+		default: {
+			const _exhaustive: never = type;
+			throw new Error(`Unknown email job type: ${String(_exhaustive)}`);
+		}
+	}
+}
+
+export function startEmailWorker(
+	options: { concurrency?: number; send?: EmailSender } = {},
+) {
 	const worker = new Worker<SendWelcomeEmailJob>(
 		QUEUE_NAMES.email,
-		async (job) => {
-			const { type, userId, email, name } = job.data;
-
-			switch (type) {
-				case "send-welcome-email": {
-					console.log(`[email-worker] Sending welcome email to ${email} (user: ${userId})`);
-					// TODO: plug in your email provider (Resend, Postmark, etc.)
-					console.log(`[email-worker] Welcome, ${name}!`);
-					break;
-				}
-				default: {
-					const _exhaustive: never = type;
-					throw new Error(`Unknown email job type: ${String(_exhaustive)}`);
-				}
-			}
-		},
+		async (job) => processEmailJob(job.data, options.send),
 		{
 			connection: createRedisConnection(),
-			concurrency: 5,
+			concurrency: options.concurrency ?? 5,
 		},
 	);
 

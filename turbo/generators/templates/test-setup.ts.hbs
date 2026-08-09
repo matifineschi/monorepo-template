@@ -1,0 +1,9 @@
+/**
+ * Preloaded by this workspace's bunfig.toml for every `bun test` run here.
+ *
+ * Tests must be able to import env-validated modules without a .env on disk, so
+ * validation is skipped outright. If this package grows integration tests, add
+ * `process.env.SOME_URL ??= "<local docker default>"` lines below so a fresh
+ * clone can run them with no env files at all.
+ */
+process.env.SKIP_ENV_VALIDATION = "1";

@@ -5,12 +5,12 @@ node_modules
 .pnp
 .pnp.js
 
-# Local env files
+# Local env files. The broad `.env.*` matters: enumerating only .env.local,
+# .env.development.local etc. would leave a stray apps/api/.env.production
+# tracked. Every .env.example is the contract and stays committed.
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # Testing
 coverage

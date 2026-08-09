@@ -2,19 +2,22 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
+import { env } from "./env";
 import type { AppVariables } from "./lib/types";
 import { sessionMiddleware } from "./middleware/session";
 import { authRoutes } from "./routes/auth";
+import { filesRoutes } from "./routes/files";
 import { healthRoutes } from "./routes/health";
 import { meRoutes } from "./routes/me";
 
-const app = new Hono<{ Variables: AppVariables }>();
+/** Exported so integration tests can drive the real stack via `app.request()`. */
+export const app = new Hono<{ Variables: AppVariables }>();
 
 app.use("*", logger());
 app.use(
 	"*",
 	cors({
-		origin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
+		origin: env.CORS_ORIGIN,
 		credentials: true,
 	}),
 );
@@ -24,12 +27,11 @@ app.use("*", sessionMiddleware);
 app.route("/", healthRoutes);
 app.route("/api/auth", authRoutes);
 app.route("/me", meRoutes);
+app.route("/files", filesRoutes);
 
-const port = Number(process.env.PORT ?? 3001);
-
-console.log(`API server running on http://localhost:${port}`);
+console.log(`API server running on http://localhost:${env.PORT}`);
 
 export default {
-	port,
+	port: env.PORT,
 	fetch: app.fetch,
 };
