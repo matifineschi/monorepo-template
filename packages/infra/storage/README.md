@@ -12,6 +12,11 @@ src/
   objects.ts  put / get / list / delete / createUploadUrl
 ```
 
+This package is the only place in the repo allowed to import `@aws-sdk/*`.
+Biome's `noRestrictedImports` enforces that: a route handler that reaches for
+the SDK directly bypasses `isOwnedBy`, and the point of a storage package is
+that the authorization boundary has exactly one home.
+
 ## The upload flow
 
 Uploads are **presigned**. The browser never receives bucket credentials:

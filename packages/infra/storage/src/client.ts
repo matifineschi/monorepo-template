@@ -19,9 +19,33 @@ export function s3Client(): S3Client {
 				accessKeyId: storageEnv.STORAGE_ACCESS_KEY_ID,
 				secretAccessKey: storageEnv.STORAGE_SECRET_ACCESS_KEY,
 			},
+			/**
+			 * Recent AWS SDK versions send a trailing CRC32 checksum on every
+			 * upload by default. Real S3 accepts it; MinIO and several other
+			 * S3-compatible services reject it outright, and the error you get
+			 * back ("XAmzContentChecksumMismatch", or a bare 400) says nothing
+			 * about checksums.
+			 *
+			 * `WHEN_REQUIRED` keeps checksums for the operations that genuinely
+			 * need them and drops them elsewhere. Scoped to a custom endpoint so a
+			 * deployment pointing at real S3 keeps the stricter default.
+			 */
+			...(isCustomEndpoint()
+				? {
+						requestChecksumCalculation: "WHEN_REQUIRED" as const,
+						responseChecksumValidation: "WHEN_REQUIRED" as const,
+					}
+				: {}),
 		});
 	}
 	return client;
+}
+
+/** True unless STORAGE_ENDPOINT points at AWS S3 itself. */
+function isCustomEndpoint(): boolean {
+	return !/(^|\.)amazonaws\.com$/.test(
+		new URL(storageEnv.STORAGE_ENDPOINT).hostname,
+	);
 }
 
 export function bucket(): string {
