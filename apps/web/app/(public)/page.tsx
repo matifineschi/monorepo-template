@@ -3,9 +3,9 @@ import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
+
 import { FeatureGrid } from "./_components/feature-grid";
 import styles from "./home.module.css";
-
 
 export default function HomePage() {
 	return (

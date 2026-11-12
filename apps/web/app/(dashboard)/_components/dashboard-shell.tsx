@@ -25,6 +25,7 @@ import {
 	UserIcon,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+
 import { signOut } from "@/lib/auth-client";
 import { BrandMark } from "../../_components/brand-mark";
 
@@ -89,10 +90,22 @@ function AppSideNav({ user }: { user: User }) {
 						/>
 					)}
 					items={[
-						{ type: "section", title: user.email, items: [
-							{ label: "Profile", href: "/dashboard/settings/profile", icon: <UserIcon /> },
-							{ label: "Settings", href: "/dashboard/settings", icon: <SettingsIcon /> },
-						] },
+						{
+							type: "section",
+							title: user.email,
+							items: [
+								{
+									label: "Profile",
+									href: "/dashboard/settings/profile",
+									icon: <UserIcon />,
+								},
+								{
+									label: "Settings",
+									href: "/dashboard/settings",
+									icon: <SettingsIcon />,
+								},
+							],
+						},
 						{ type: "divider" },
 						{
 							label: "Sign out",

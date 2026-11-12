@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { Hono } from "hono";
 
 import type { AppVariables } from "../../lib/types";

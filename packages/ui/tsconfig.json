@@ -6,16 +6,8 @@
 		"module": "preserve",
 		"moduleResolution": "bundler",
 		"jsx": "react-jsx",
-		"types": [
-			"bun-types",
-			"node"
-		]
+		"types": ["bun-types", "node"]
 	},
-	"include": [
-		"src"
-	],
-	"exclude": [
-		"node_modules",
-		"dist"
-	]
+	"include": ["src"],
+	"exclude": ["node_modules", "dist"]
 }

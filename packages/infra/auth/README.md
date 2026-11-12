@@ -56,7 +56,6 @@ sessions minted by one service will not validate in the other otherwise.
 
 | Command | What it does |
 |---|---|
-| `bun run lint` | Biome check (no ESLint, no Prettier in this repo) |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bun run test` | Unit tests |
 | `bun run gen:schema` | Regenerate and patch the better-auth Drizzle schema |

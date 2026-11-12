@@ -59,7 +59,12 @@ const features = [
 
 export function FeatureGrid() {
 	return (
-		<Grid columns={{ minWidth: 300, max: 3 }} gap={4} width="100%" maxWidth={1152}>
+		<Grid
+			columns={{ minWidth: 300, max: 3 }}
+			gap={4}
+			width="100%"
+			maxWidth={1152}
+		>
 			{features.map((feature) => (
 				<Card key={feature.title} padding={6}>
 					<VStack gap={3}>

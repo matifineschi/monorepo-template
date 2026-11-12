@@ -10,11 +10,11 @@ the consuming workspace's dependencies.
 
 | Command | What it does |
 |---|---|
-| `bun run lint` | Biome check for this package (no ESLint, no Prettier) |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bun run test` | Unit tests in `src/**/__tests__/*.test.ts` |
 
-Run `bun run format` from the repo root to apply fixes across the monorepo.
+Linting and formatting are repo-wide: run `bun run format` from the root. There
+is one Biome config, at the repo root — packages do not carry their own.
 
 ## Conventions
 

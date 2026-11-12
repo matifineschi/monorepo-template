@@ -4,7 +4,6 @@
 	"type": "module",
 	"scripts": {
 		"clean": "git clean -xdf .cache .turbo dist node_modules",
-		"lint": "biome check",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test src",
 		"test:integration": "bun test tests/integration",
@@ -13,7 +12,6 @@
 		"db:push": "drizzle-kit push"
 	},
 	"devDependencies": {
-		"@repo/biome-config": "workspace:*",
 		"@repo/typescript-config": "workspace:*",
 		"@types/node": "catalog:",
 		"drizzle-kit": "^0.31.5",

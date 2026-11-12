@@ -1,7 +1,8 @@
+import { Worker } from "bullmq";
+
 import type { DeleteFileJob } from "@repo/queues";
 import { createRedisConnection, QUEUE_NAMES } from "@repo/queues";
 import { deleteObject } from "@repo/storage";
-import { Worker } from "bullmq";
 
 /** Injected so the job body is assertable without a bucket. */
 export type ObjectDeleter = (key: string) => Promise<void>;

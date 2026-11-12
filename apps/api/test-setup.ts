@@ -10,7 +10,8 @@
  * value typed `boolean` is really the string "true". Supplying defaults instead
  * means tests parse env exactly the way production does.
  */
-process.env.DATABASE_URL ??= "postgres://postgres:postgres@localhost:5430/postgres";
+process.env.DATABASE_URL ??=
+	"postgres://postgres:postgres@localhost:5430/postgres";
 process.env.REDIS_URL ??= "redis://localhost:6379";
 process.env.BETTER_AUTH_URL ??= "http://localhost:3000";
 process.env.BETTER_AUTH_SECRET ??= "test-secret-not-for-production";

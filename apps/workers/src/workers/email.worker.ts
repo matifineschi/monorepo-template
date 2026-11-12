@@ -1,6 +1,7 @@
+import { Worker } from "bullmq";
+
 import type { SendWelcomeEmailJob } from "@repo/queues";
 import { createRedisConnection, QUEUE_NAMES } from "@repo/queues";
-import { Worker } from "bullmq";
 
 /**
  * Swap this for Resend / Postmark / SES. It is injected rather than imported so

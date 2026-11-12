@@ -8,7 +8,9 @@ export type AuthUser = {
 	email: string | null;
 };
 
-export async function getAuthUserById(userId: string): Promise<AuthUser | null> {
+export async function getAuthUserById(
+	userId: string,
+): Promise<AuthUser | null> {
 	const [user] = await db
 		.select({
 			id: schema.userAuthUsers.id,

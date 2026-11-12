@@ -1,10 +1,11 @@
 "use server";
 
-import { auth } from "@repo/auth";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { $ZodFlattenedError } from "zod/v4/core";
+
+import { auth } from "@repo/auth";
 
 const loginSchema = z.object({
 	email: z.string().trim().email("Enter a valid email address"),

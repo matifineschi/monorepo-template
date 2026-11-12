@@ -1,8 +1,11 @@
 // globals.css must come first: it names the design system's cascade layers,
 // and a stylesheet that loads before it would silently invert the cascade.
 import "./globals.css";
-import { Providers } from "@repo/ui/providers";
+
 import type { Metadata } from "next";
+
+import { Providers } from "@repo/ui/providers";
+
 import { clientEnv } from "@/env";
 
 export const metadata: Metadata = {

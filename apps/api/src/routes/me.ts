@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+
 import type { AppVariables } from "../lib/types";
 
 export const meRoutes = new Hono<{ Variables: AppVariables }>();

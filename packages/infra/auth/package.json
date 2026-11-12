@@ -4,13 +4,11 @@
 	"type": "module",
 	"scripts": {
 		"clean": "git clean -xdf .cache .turbo dist node_modules",
-		"lint": "biome check",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test src",
 		"gen:schema": "SKIP_ENV_VALIDATION=1 bun x auth@latest generate --output ../db/src/schema/user-auth.ts && ./patch-schema.sh"
 	},
 	"devDependencies": {
-		"@repo/biome-config": "workspace:*",
 		"@repo/typescript-config": "workspace:*",
 		"@types/node": "catalog:",
 		"typescript": "catalog:"

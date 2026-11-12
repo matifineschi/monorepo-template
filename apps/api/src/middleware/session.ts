@@ -1,5 +1,7 @@
-import { auth } from "@repo/auth";
 import type { MiddlewareHandler } from "hono";
+
+import { auth } from "@repo/auth";
+
 import type { AppVariables } from "../lib/types";
 
 export const sessionMiddleware: MiddlewareHandler<{

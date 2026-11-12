@@ -1,50 +1,29 @@
 {
 	"$schema": "https://unpkg.com/knip@6/schema.json",
-	"tags": [
-		"-lintignore"
-	],
-	"ignoreUnresolved": [
-		"next"
-	],
+	"tags": ["-lintignore"],
+	"ignoreUnresolved": ["next"],
 	"workspaces": {
 		".": {
-			"entry": [
-				"turbo/generators/config.ts"
-			]
+			"entry": ["turbo/generators/config.ts"]
 		},
 		"apps/web": {
-			"entry": [
-				"env.ts"
-			]
+			"entry": ["env.ts"]
 		},
 		"apps/api": {
-			"entry": [
-				"src/index.ts",
-				"tests/integration/*.test.ts"
-			]
+			"entry": ["src/index.ts", "tests/integration/*.test.ts"]
 		},
 		"apps/workers": {
-			"entry": [
-				"src/index.ts",
-				"tests/integration/*.test.ts"
-			]
+			"entry": ["src/index.ts", "tests/integration/*.test.ts"]
 		},
 		"packages/queues": {
-			"entry": [
-				"tests/integration/*.test.ts"
-			]
+			"entry": ["tests/integration/*.test.ts"]
 		},
 		"packages/ui": {},
 		"packages/infra/db": {
-			"entry": [
-				"src/operations/*.ts",
-				"tests/integration/*.test.ts"
-			]
+			"entry": ["src/operations/*.ts", "tests/integration/*.test.ts"]
 		},
 		"packages/infra/storage": {
-			"entry": [
-				"tests/integration/*.test.ts"
-			]
+			"entry": ["tests/integration/*.test.ts"]
 		}
 	}
 }
