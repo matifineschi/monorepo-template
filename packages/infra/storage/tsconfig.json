@@ -6,6 +6,6 @@
 		"module": "ESNext",
 		"moduleResolution": "bundler"
 	},
-	"include": ["src", "tests"],
+	"include": ["src", "tests", "test-setup.ts", "test-setup.integration.ts"],
 	"exclude": ["node_modules"]
 }

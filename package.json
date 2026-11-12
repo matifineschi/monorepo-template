@@ -32,9 +32,9 @@
 		"format:check": "biome check .",
 		"typecheck": "turbo run typecheck",
 		"test": "turbo run test",
-		"test:integration": "turbo run test:integration --concurrency=1",
+		"test:integration": "turbo run test:integration",
 		"ci": "biome check . && turbo run typecheck test",
-		"ci:full": "bun run ci && bun run knip && turbo run build && bun run db:wait && bun run --filter @repo/db db:migrate && bun run test:integration",
+		"ci:full": "bun run ci && bun run knip && turbo run build && bun run test-infra:up && bun run test:integration",
 		"gen:package": "turbo gen package",
 		"astryx": "node node_modules/@astryxdesign/cli/clients/cli/bin/astryx.mjs",
 		"knip": "knip",
@@ -42,6 +42,9 @@
 		"db:wait": "docker compose up -d --wait postgres redis minio && docker compose up -d minio-createbucket",
 		"db:down": "docker compose down",
 		"db:reset": "docker compose down -v && docker compose up -d",
+		"test-infra:up": "docker compose -f docker-compose.test.yml up -d --wait",
+		"test-infra:down": "docker compose -f docker-compose.test.yml down -v",
+		"test-infra:logs": "docker compose -f docker-compose.test.yml logs --tail 200",
 		"prepare": "husky"
 	},
 	"devDependencies": {

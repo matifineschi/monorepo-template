@@ -13,12 +13,17 @@
 			"types": "./src/env.ts",
 			"import": "./src/env.ts",
 			"default": "./src/env.ts"
+		},
+		"./testing/prefix": {
+			"types": "./src/testing/prefix.ts",
+			"import": "./src/testing/prefix.ts",
+			"default": "./src/testing/prefix.ts"
 		}
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit",
 		"test": "bun test src",
-		"test:integration": "bun test tests/integration"
+		"test:integration": "bun test --preload ./test-setup.integration.ts tests/integration"
 	},
 	"dependencies": {
 		"@repo/env": "workspace:*",

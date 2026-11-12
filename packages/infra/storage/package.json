@@ -13,17 +13,23 @@
 			"types": "./src/env.ts",
 			"import": "./src/env.ts",
 			"default": "./src/env.ts"
+		},
+		"./testing/bucket": {
+			"types": "./src/testing/bucket.ts",
+			"import": "./src/testing/bucket.ts",
+			"default": "./src/testing/bucket.ts"
 		}
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit",
 		"test": "bun test src",
-		"test:integration": "bun test tests/integration"
+		"test:integration": "bun test --preload ./test-setup.integration.ts tests/integration"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "catalog:",
 		"@aws-sdk/s3-request-presigner": "catalog:",
 		"@repo/env": "workspace:*",
+		"@repo/utils": "workspace:*",
 		"@t3-oss/env-core": "catalog:",
 		"zod": "catalog:"
 	},

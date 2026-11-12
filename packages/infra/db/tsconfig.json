@@ -6,6 +6,12 @@
 		"module": "ESNext",
 		"moduleResolution": "bundler"
 	},
-	"include": ["src", "tests", "test-setup.ts", "drizzle.config.ts"],
+	"include": [
+		"src",
+		"tests",
+		"test-setup.ts",
+		"test-setup.integration.ts",
+		"drizzle.config.ts"
+	],
 	"exclude": ["node_modules", "dist"]
 }

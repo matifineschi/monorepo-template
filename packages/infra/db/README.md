@@ -12,6 +12,7 @@ src/
   errors.ts       Postgres error-code predicates, via @repo/db/errors
   schema/         one file per table, plus the index.ts barrel
   operations/     hand-written typed DAL, one file per domain
+  testing/        per-run test databases, via @repo/db/testing/database
 migrations/       generated SQL + snapshots — never hand-edited
 drizzle.config.ts
 ```
@@ -137,6 +138,27 @@ since `@repo/storage` is deliberately stateless):
 This package has its own `.env` because drizzle-kit runs with it as the working
 directory. Copy `.env.example` to `.env`.
 
+## Tests get a database of their own
+
+`test:integration` here preloads `test-setup.integration.ts`, which calls
+`provisionTestDatabase` from `src/testing/database.ts`. That applies the
+migrations once into a template database named after a fingerprint of the
+`migrations/` folder, then clones a database per run from it and points
+`DATABASE_URL` at the clone. `CREATE DATABASE ... TEMPLATE` is a file copy
+inside Postgres, so a clone is tens of milliseconds; the template is rebuilt
+only when a migration changes, because that changes its name.
+
+The consequences worth knowing:
+
+- Suites need no run-scoped ids and no hand-written cleanup. The database goes
+  away at the end of the run, and a run killed before that is swept after 24h.
+- Integration suites run **in parallel**. Nothing is shared to race over.
+- It runs against the stack in `docker-compose.test.yml`, never the dev stack —
+  these suites drop databases, which must never be the one `bun run dev` uses.
+- `src/testing/database.ts` deliberately does not import `./client`: that module
+  validates env and opens its pool at import time, which would capture the old
+  `DATABASE_URL` before the new database existed.
+
 ## Known gap: RLS is not exercised by tests
 
 `public.users` has RLS enabled with a `users_all_own` policy keyed on
@@ -154,8 +176,8 @@ before querying. Until then, authorization is enforced in the application layer.
 bun run --filter @repo/db db:generate   # generate a migration from schema changes
 bun run --filter @repo/db db:migrate    # apply migrations
 bun run --filter @repo/db db:push       # push schema directly (dev only)
-bun run --filter @repo/db test          # unit tests
-bun run --filter @repo/db test:integration  # needs Postgres running
+bun run --filter @repo/db test          # unit tests, no docker needed
+bun run --filter @repo/db test:integration  # needs `bun run test-infra:up`
 ```
 
 Linting and formatting are repo-wide: one Biome config at the root, run with
