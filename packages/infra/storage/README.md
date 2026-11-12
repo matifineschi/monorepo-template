@@ -1,6 +1,6 @@
 # @repo/storage
 
-S3-compatible object storage. MinIO locally, any S3 API in production.
+S3-compatible object storage. Silo locally, any S3 API in production.
 
 ## Layout
 
@@ -73,17 +73,17 @@ get the database as a second ownership check.
 
 | Variable | Notes |
 |---|---|
-| `STORAGE_ENDPOINT` | `http://localhost:9000` for the local MinIO |
+| `STORAGE_ENDPOINT` | `http://localhost:9000` for the local Silo |
 | `STORAGE_REGION` | Defaults to `auto` |
 | `STORAGE_ACCESS_KEY_ID` | `minioadmin` locally |
 | `STORAGE_SECRET_ACCESS_KEY` | `minioadmin` locally |
 | `STORAGE_BUCKET` | `app-uploads` locally, created by the `minio-createbucket` job |
-| `STORAGE_FORCE_PATH_STYLE` | `true` for MinIO and most S3-compatible services; **`false` for real AWS S3**, which wants virtual-hosted style |
+| `STORAGE_FORCE_PATH_STYLE` | `true` for Silo and most S3-compatible services; **`false` for real AWS S3**, which wants virtual-hosted style |
 
 Both `apps/api` and `apps/workers` need these, and they must match — the API
 presigns uploads into the bucket the workers delete from.
 
-### Swapping MinIO for a real bucket
+### Swapping Silo for a real bucket
 
 Change `STORAGE_ENDPOINT`, the two credentials, `STORAGE_BUCKET`, and set
 `STORAGE_FORCE_PATH_STYLE=false` for AWS S3. Nothing in the code changes.
@@ -92,7 +92,7 @@ R2, Spaces and Backblaze generally keep path-style at `true`.
 ### Gotcha: presigned URLs embed the endpoint
 
 A URL signed against `http://localhost:9000` only works from the host. Under
-Docker networking, containers reach MinIO at `http://minio:9000` while browsers
+Docker networking, containers reach Silo at `http://minio:9000` while browsers
 need `localhost:9000` — if a deployment ever needs both, that is a second
 `STORAGE_PUBLIC_ENDPOINT` variable, not a code change.
 
@@ -101,17 +101,17 @@ need `localhost:9000` — if a deployment ever needs both, that is a second
 ```sh
 bun run --filter @repo/storage test              # keys.ts — no bucket needed
 bun run test-infra:up
-bun run --filter @repo/storage test:integration  # real MinIO
+bun run --filter @repo/storage test:integration  # real Silo
 ```
 
-The integration tests run against real MinIO rather than a mocked SDK on
+The integration tests run against real Silo rather than a mocked SDK on
 purpose: a stub cannot catch a path-style, region, or signing misconfiguration,
 which is the class of bug actually worth catching here. The presigned-URL test
 fetches its own URL with a plain `PUT`, which proves the whole chain at once.
 
 Each run gets a **bucket of its own**. `test:integration` preloads
 `test-setup.integration.ts`, which calls `provisionTestBucket` to create one
-against the MinIO in `docker-compose.test.yml`, point `STORAGE_BUCKET` at it,
+against the Silo service in `docker-compose.test.yml`, point `STORAGE_BUCKET` at it,
 and empty and remove it when the run ends.
 
 That matters more here than for the database. Unlike a database, **nothing ever

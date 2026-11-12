@@ -14,7 +14,7 @@ A full-stack TypeScript monorepo boilerplate built with Turborepo, Bun, Next.js,
 - **Database**: [PostgreSQL 17](https://www.postgresql.org) via Docker
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team) with migrations and RLS policies
 - **Auth**: [better-auth](https://www.better-auth.com) (email + password)
-- **File storage**: S3-compatible — [MinIO](https://min.io) locally, any S3 API in production
+- **File storage**: S3-compatible — [Silo](https://silo.pgsty.com) (MinIO-compatible) locally, any S3 API in production
 - **Env validation**: [@t3-oss/env](https://env.t3.gg) + [Zod](https://zod.dev), validated at boot
 - **Logging**: [pino](https://getpino.io) — structured, one config, every server process
 - **Testing**: `bun test` — unit, plus integration against an isolated docker stack
@@ -67,7 +67,7 @@ bun run --filter @repo/db db:migrate && bun run dev
 | Web | http://localhost:3000 |
 | API | http://localhost:3001 |
 | Drizzle Gateway (DB inspector) | http://localhost:3002 |
-| MinIO console | http://localhost:9001 (minioadmin / minioadmin) |
+| Silo console | http://localhost:9001 (minioadmin / minioadmin) |
 
 Postgres listens on **5430**, not the default 5432, to avoid clashing with a local install.
 
