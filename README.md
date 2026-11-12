@@ -17,7 +17,7 @@ A full-stack TypeScript monorepo boilerplate built with Turborepo, Bun, Next.js,
 - **File storage**: S3-compatible — [MinIO](https://min.io) locally, any S3 API in production
 - **Env validation**: [@t3-oss/env](https://env.t3.gg) + [Zod](https://zod.dev), validated at boot
 - **Testing**: `bun test` — unit and integration layers
-- **UI**: [shadcn/ui](https://ui.shadcn.com) component library with [Tailwind CSS v4](https://tailwindcss.com)
+- **UI**: [Astryx](https://astryx.atmeta.com) — Meta's open source design system (150+ accessible components, token-driven theming, dark mode)
 - **Linting/Formatting**: [Biome](https://biomejs.dev) (replaces ESLint + Prettier)
 - **Language**: TypeScript (strict mode)
 
@@ -77,7 +77,7 @@ apps/
   api/              Hono backend API — REST endpoints, CORS, presigned uploads
   workers/          BullMQ workers — welcome email, async object cleanup
 packages/
-  ui/               Shared React component library (shadcn/ui)
+  ui/               Astryx theme layer (globals.css + providers)
   queues/           BullMQ queue definitions and job payload types
   env/              Env-validation helpers shared by every package
   biome-config/     Shared Biome lint/format configurations

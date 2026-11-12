@@ -11,16 +11,16 @@
 		"typecheck": "next typegen && tsc --noEmit"
 	},
 	"dependencies": {
+		"@astryxdesign/core": "catalog:",
 		"@repo/auth": "workspace:*",
 		"@repo/db": "workspace:*",
 		"@repo/env": "workspace:*",
 		"@repo/ui": "workspace:*",
+		"@stylexjs/stylex": "catalog:",
 		"@t3-oss/env-nextjs": "catalog:",
-		"@tailwindcss/postcss": "catalog:",
 		"better-auth": "^1.6.2",
 		"lucide-react": "^1.8.0",
 		"next": "catalog:",
-		"postcss": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
 		"zod": "catalog:"

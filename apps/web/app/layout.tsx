@@ -1,16 +1,9 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { clientEnv } from "@/env";
+// globals.css must come first: it names the design system's cascade layers,
+// and a stylesheet that loads before it would silently invert the cascade.
 import "./globals.css";
-
-const geistSans = Geist({
-	variable: "--font-geist-sans",
-	subsets: ["latin"],
-});
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
-	subsets: ["latin"],
-});
+import { Providers } from "@repo/ui/providers";
+import type { Metadata } from "next";
+import { clientEnv } from "@/env";
 
 export const metadata: Metadata = {
 	metadataBase: new URL(clientEnv.NEXT_PUBLIC_APP_URL),
@@ -25,8 +18,8 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body className={`${geistSans.variable} ${geistMono.variable}`}>
-				{children}
+			<body>
+				<Providers>{children}</Providers>
 			</body>
 		</html>
 	);
