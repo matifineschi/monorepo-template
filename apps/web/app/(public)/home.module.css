@@ -1,0 +1,23 @@
+/*
+ * The one hand-written stylesheet in the app.
+ *
+ * Rule: Astryx design tokens only -- no literal colors, sizes or spacing. A
+ * token keeps this in step with the theme and with dark mode; a hex value does
+ * not. If something here grows past a few decorative rules, the right answer is
+ * an Astryx layout component, not more CSS.
+ *
+ * CSS Modules are unlayered, so these rules win over Astryx's layers without
+ * needing !important.
+ */
+
+/* Marketing-only flourish: the headline's accent gradient. */
+.gradientText {
+	background-image: linear-gradient(
+		135deg,
+		var(--color-text-blue) 0%,
+		var(--color-text-purple) 100%
+	);
+	background-clip: text;
+	-webkit-background-clip: text;
+	color: transparent;
+}

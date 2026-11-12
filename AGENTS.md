@@ -55,7 +55,7 @@ apps/
   api/          Hono backend API
   workers/      BullMQ background workers
 packages/
-  ui/           Shared React components (shadcn/ui + Tailwind v4)
+  ui/           Astryx theme layer: globals.css + the Theme/Link providers
   queues/       BullMQ queue definitions and job payload types
   env/          shouldSkipEnvValidation() + booleanFlag()
   biome-config/ Shared Biome presets
@@ -81,7 +81,12 @@ better-auth, a bucket. Everything else goes in `packages/*`.
 - **TypeScript 5.9**, strict, with `noUncheckedIndexedAccess`. Shared config in
   `packages/typescript-config`.
 - **Turborepo 2.9** for task orchestration.
-- **Tailwind CSS v4** via PostCSS.
+- **Astryx** (`@astryxdesign/core`) is the design system — Meta's open source
+  component library, built on React 19 and StyleX. It ships **pre-built CSS and
+  JS**: there is no Tailwind, no PostCSS, no Babel and no build plugin.
+  `@astryxdesign/core` and `@astryxdesign/theme-neutral` are pinned to the **same
+  exact version** and must be bumped together — the theme peer-depends on core
+  at an exact version, not a range.
 
 Every dependency version lives in the root `package.json` `catalog` block and is
 referenced as `"catalog:"` from workspaces. Bump it in one place, not nine. This
@@ -297,11 +302,73 @@ Rules for integration tests:
 owner, so `users_all_own` is bypassed entirely and integration tests do not
 exercise it. A green suite is not evidence that RLS works.
 
-Component tests for `packages/ui` are deliberately absent — it is vendored
-shadcn, so a test there would assert Radix's behavior rather than ours. If you
-ever need one, `@happy-dom/global-registrator` in a bunfig preload plus
+Component tests for `packages/ui` are deliberately absent — it is a theme
+layer, not a component library, so there is nothing there to assert that isn't
+Astryx's own behavior. That is also why the package declares **no `test`
+script**: `bun test` exits non-zero when no files match, which would red
+`turbo run test`. Do not add one back. If you ever need a component test, `@happy-dom/global-registrator` in a bunfig preload plus
 `@testing-library/react` works, but `GlobalRegistrator.register()` must run
 before React is imported anywhere, so preload order becomes load-bearing.
+
+## Styling and UI
+
+Astryx is the design system. Read its component index at the bottom of this file,
+and **read a component's docs before using it** — props are not guessable:
+
+```sh
+bun run astryx search <query>       # find a component, hook, doc or template
+bun run astryx component <Name>     # full props, variants and examples
+bun run astryx docs tokens          # every design token
+bun run astryx build "<idea>"       # the template to start a new page from
+bun run astryx doctor               # check the installation
+```
+
+Always the **scoped** package when invoking without the script
+(`bunx @astryxdesign/cli`): bare `astryx` on a runner is an unrelated npm package.
+
+The rules, in priority order:
+
+- **Apps import components directly from `@astryxdesign/core`.** `@repo/ui` is a
+  theme layer, not a facade — it owns `globals.css` and `Providers`, nothing else.
+- **Layout comes from layout components**, not utility classes: `VStack`, `HStack`,
+  `Grid`, `Center`, `Section`, `Layout`, `AppShell`. `Grid columns={{minWidth, max}}`
+  is how you get responsive columns without breakpoints.
+- **Appearance comes from component props**, then design tokens. Never a literal
+  hex, px or rem value.
+- **There are no utility classes.** Tailwind was removed deliberately; do not
+  reintroduce it or hand-roll a utility layer.
+- **The one escape hatch is a CSS Module** colocated with the page, and it may
+  reference **only** Astryx token custom properties (`var(--color-text-primary)`,
+  `var(--spacing-4)`). `apps/web/app/(public)/home.module.css` is the worked
+  example and should stay roughly the size it is. CSS Modules are unlayered, so
+  they win over Astryx's cascade layers without `!important`.
+- **`xstyle` needs a StyleX compiler**, which this repo does not install. Use
+  component props, tokens, or a CSS Module instead. The same applies to any
+  Astryx page template that uses StyleX — prefer the block templates, which do not.
+- **`globals.css` must be the first stylesheet the page loads.** It names the
+  cascade layers (`reset` → `astryx-base` → `astryx-theme`), and a stylesheet that
+  loads before it silently inverts the cascade with a clean build and console.
+- **Astryx's `Icon` is a client component, and an icon *component* cannot cross
+  the server/client boundary as a prop.** A server component that wants icons puts
+  them in a small `"use client"` child that imports them itself —
+  `app/(dashboard)/_components/dashboard-overview.tsx` is the worked example.
+  Most Astryx components (`Card`, `Grid`, `Stack`, `Badge`, `EmptyState`) render
+  fine in server components; do not add blanket `"use client"` directives.
+- **Dark mode is automatic.** `Theme` defaults to `mode="system"`; there is no
+  `next-themes` and no `.dark` class. Check both modes when you touch UI.
+- **Form inputs are controlled, and the form attribute is `htmlName`, not `name`.**
+  `TextInput` requires `value`/`onChange`; `htmlName` is what puts the field into
+  the `FormData` a server action reads. Getting this wrong fails validation
+  silently rather than crashing.
+- **After any `astryx` codegen** (`init`, `template`, `swizzle`, `upgrade`), run
+  `bun run format` before reading the diff — Astryx emits single quotes and
+  2-space indent, the repo is tabs and double quotes.
+- **To own a component locally**, `bun run astryx swizzle <Name>` — deliberately,
+  with a comment saying why. Its output lands in `packages/ui/src/components/`,
+  which is the one circumstance under which that directory comes back.
+
+Astryx is in **beta (0.7.x)**. On a version bump, run
+`bun run astryx upgrade --from <old> --apply` and read the diff.
 
 ## Conventions
 
@@ -342,6 +409,10 @@ Husky runs `format:check` on pre-commit and the full `bun run ci` on pre-push.
 ## Things to avoid
 
 - Adding ESLint or Prettier.
+- Reintroducing Tailwind, PostCSS, or any utility-class layer.
+- Writing a literal color, px or rem value instead of an Astryx design token.
+- Guessing an Astryx component's props instead of running `bun run astryx component <Name>`.
+- Hand-editing the generated Astryx block at the bottom of this file.
 - `npm install` or `pnpm install`.
 - Reading `process.env` directly outside a `src/env.ts`.
 - Importing `@repo/db/client` from an app — use `@repo/db/operations/*`.
@@ -349,3 +420,42 @@ Husky runs `format:check` on pre-commit and the full `bun run ci` on pre-push.
 - Accepting a storage key from a request without `isOwnedBy`.
 - Committing a `.env`.
 - Force-pushing, `--no-verify`, or skipping migrations.
+
+## Astryx component index
+
+Everything below this line is **generated** by `bun run astryx init` and refreshed by
+`astryx upgrade`. Do not hand-edit it — edits are lost on the next refresh, and the
+`ASTRYX:START`/`ASTRYX:END` markers are what the CLI anchors to. Everything *above*
+this line is hand-written.
+
+<!-- ASTRYX:START -->
+Astryx v0.7.14 · 174 components
+CLI: run every command as `bunx astryx <cmd>` (shown below as `astryx ...`).
+
+SETUP (once, in app entry e.g. main.tsx) — without these, components render unstyled:
+  import "@astryxdesign/core/reset.css";
+  import "@astryxdesign/core/astryx.css";
+
+WORKFLOW — start every page from a template, never from scratch:
+1. `astryx build "<idea>"` — names the template to scaffold from and the parts it lacks.
+2. `astryx template <name> <path>` — scaffold it; keep its frame, gap and padding; replace the content.
+3. `astryx template <Block>` for parts it lacks; `astryx component <Name>` to read props before using one.
+Changing an existing page? Keep it: skip step 2 and add blocks/components inside its sections.
+Before you deliver a build, run `astryx doctor --built <dir>`; don't deliver it if it fails.
+
+RULES:
+- No <div> — components handle all layout and spacing.
+- Read `astryx docs layout` before changing a template's frame.
+- Dense data = rows (Table, List/Item), not Card-wrapped lists. Badge = counts only.
+- Style with component props first, then tokens (var(--color-*|--spacing-*|--radius-*)). No raw hex/px. No StyleX/Tailwind compiler here — don't use xstyle/utility classes directly. Some templates use StyleX and need a compiler plugin; see `astryx docs styling-overview`.
+- Palettes and custom colors go through the theme, never :root overrides. Run `astryx theme add <slug>` to import; `theme eject <slug>` only forks source. See `astryx docs theme`.
+- SELF-CHECK: re-read the file; replace any raw <div>/<span>, imported .css/@apply, or hardcoded #hex/px with the component or a token.
+
+`astryx help` lists every command. Key ones beyond the workflow:
+  search "<query>"   find any component / hook / doc / template
+  discover <words>   integrations you could add
+  docs <topic>       getting-started, principles, tokens, theme … (`astryx docs` lists all)
+  docs cli           commands and API reference
+  docs authoring     build an integration package, and every field it holds
+  upgrade --from <old version> --apply   run after a dependency bump
+<!-- ASTRYX:END -->

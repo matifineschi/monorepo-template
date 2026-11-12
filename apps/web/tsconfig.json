@@ -7,8 +7,9 @@
 			}
 		],
 		"paths": {
-			"@/*": ["./*"],
-			"@repo/ui/src/*": ["../../packages/ui/src/*"]
+			"@/*": [
+				"./*"
+			]
 		},
 		"strictNullChecks": true
 	},
@@ -19,5 +20,7 @@
 		"next.config.js",
 		".next/types/**/*.ts"
 	],
-	"exclude": ["node_modules"]
+	"exclude": [
+		"node_modules"
+	]
 }
