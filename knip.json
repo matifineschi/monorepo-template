@@ -24,6 +24,7 @@
 		},
 		"packages/infra/storage": {
 			"entry": ["tests/integration/*.test.ts"]
-		}
+		},
+		"packages/utils": {}
 	}
 }

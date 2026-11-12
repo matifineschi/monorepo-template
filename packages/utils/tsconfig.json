@@ -1,0 +1,11 @@
+{
+	"extends": "@repo/typescript-config/base.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"types": ["bun-types", "node"],
+		"module": "ESNext",
+		"moduleResolution": "bundler"
+	},
+	"include": ["src", "test-setup.ts"],
+	"exclude": ["node_modules"]
+}
