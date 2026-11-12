@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+
+# One run per branch. Pushing twice in a minute should not leave the first run
+# burning a runner, but on main every commit is checked because that is the
+# commit a deploy comes from.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  FORCE_COLOR: 3
+
+jobs:
+  check:
+    name: Lint, typecheck, unit tests
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+
+      # Everything that needs no services, so a formatting mistake fails in
+      # under a minute instead of after docker has come up.
+      - run: bun run ci
+
+      - name: Unused files, exports and dependencies
+        run: bun run knip
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    needs: check
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+
+      # The same compose file developers run, rather than GitHub `services:`
+      # blocks. Service containers cannot take a `command`, which MinIO needs,
+      # and duplicating the stack in workflow YAML means CI and local drift.
+      - name: Start the test stack
+        run: bun run test-infra:up
+
+      - name: Integration tests
+        run: bun run test:integration
+
+      - name: Test stack logs
+        if: failure()
+        run: bun run test-infra:logs
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    needs: check
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+
+      # `next build` validates env, and there is no root .env, so each app's
+      # example file stands in. These are the local docker defaults and no
+      # secret is involved — the build only needs the shapes to parse.
+      - name: Seed env from the committed examples
+        run: |
+          cp apps/web/.env.example apps/web/.env
+          cp apps/api/.env.example apps/api/.env
+          cp apps/workers/.env.example apps/workers/.env
+          cp packages/infra/db/.env.example packages/infra/db/.env
+
+      - run: bun run build
