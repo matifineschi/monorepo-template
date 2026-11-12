@@ -1,8 +1,12 @@
 import { Worker } from "bullmq";
 
+import { childLogger } from "@repo/logger";
 import type { DeleteFileJob } from "@repo/queues";
 import { createRedisConnection, QUEUE_NAMES } from "@repo/queues";
 import { deleteObject } from "@repo/storage";
+import { createError } from "@repo/utils/error";
+
+const log = childLogger({ worker: QUEUE_NAMES.files });
 
 /** Injected so the job body is assertable without a bucket. */
 export type ObjectDeleter = (key: string) => Promise<void>;
@@ -26,7 +30,9 @@ export async function processFileCleanupJob(
 		}
 		default: {
 			const _exhaustive: never = type;
-			throw new Error(`Unknown file job type: ${String(_exhaustive)}`);
+			throw createError("Unknown file job type", {
+				context: { type: String(_exhaustive) },
+			});
 		}
 	}
 }
@@ -44,11 +50,14 @@ export function startFileCleanupWorker(
 	);
 
 	worker.on("completed", (job) => {
-		console.log(`[file-cleanup-worker] Job ${job.id} completed`);
+		log.debug({ jobId: job.id }, "Job completed");
 	});
 
-	worker.on("failed", (job, err) => {
-		console.error(`[file-cleanup-worker] Job ${job?.id} failed:`, err.message);
+	worker.on("failed", (job, error) => {
+		log.error(
+			{ jobId: job?.id, attemptsMade: job?.attemptsMade, err: error },
+			"Job failed",
+		);
 	});
 
 	return worker;

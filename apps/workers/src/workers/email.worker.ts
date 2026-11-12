@@ -1,7 +1,11 @@
 import { Worker } from "bullmq";
 
+import { childLogger } from "@repo/logger";
 import type { SendWelcomeEmailJob } from "@repo/queues";
 import { createRedisConnection, QUEUE_NAMES } from "@repo/queues";
+import { createError } from "@repo/utils/error";
+
+const log = childLogger({ worker: QUEUE_NAMES.email });
 
 /**
  * Swap this for Resend / Postmark / SES. It is injected rather than imported so
@@ -13,14 +17,14 @@ export type EmailSender = (message: {
 	body: string;
 }) => Promise<void>;
 
-const consoleEmailSender: EmailSender = async (message) => {
-	console.log(`[email-worker] -> ${message.to}: ${message.subject}`);
+const loggingEmailSender: EmailSender = async (message) => {
+	log.info({ to: message.to, subject: message.subject }, "Email would be sent");
 };
 
 /** The job body, with no BullMQ or Redis anywhere near it. */
 export async function processEmailJob(
 	data: SendWelcomeEmailJob,
-	send: EmailSender = consoleEmailSender,
+	send: EmailSender = loggingEmailSender,
 ): Promise<void> {
 	const { type } = data;
 
@@ -35,7 +39,9 @@ export async function processEmailJob(
 		}
 		default: {
 			const _exhaustive: never = type;
-			throw new Error(`Unknown email job type: ${String(_exhaustive)}`);
+			throw createError("Unknown email job type", {
+				context: { type: String(_exhaustive) },
+			});
 		}
 	}
 }
@@ -53,11 +59,16 @@ export function startEmailWorker(
 	);
 
 	worker.on("completed", (job) => {
-		console.log(`[email-worker] Job ${job.id} completed`);
+		log.debug({ jobId: job.id }, "Job completed");
 	});
 
-	worker.on("failed", (job, err) => {
-		console.error(`[email-worker] Job ${job?.id} failed:`, err.message);
+	worker.on("failed", (job, error) => {
+		// `attemptsMade` is the field that distinguishes a transient failure
+		// BullMQ will retry from the final one that gives up.
+		log.error(
+			{ jobId: job?.id, attemptsMade: job?.attemptsMade, err: error },
+			"Job failed",
+		);
 	});
 
 	return worker;
