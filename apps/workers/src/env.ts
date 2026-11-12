@@ -3,12 +3,13 @@ import { z } from "zod";
 
 import { shouldSkipEnvValidation } from "@repo/env";
 import { baseEnv } from "@repo/env/base";
+import { loggerEnv } from "@repo/logger/env";
 import { queuesEnv } from "@repo/queues/env";
 import { storageEnv } from "@repo/storage/env";
 
 export const env = createEnv({
 	emptyStringAsUndefined: true,
-	extends: [baseEnv, queuesEnv, storageEnv],
+	extends: [baseEnv, queuesEnv, storageEnv, loggerEnv],
 	runtimeEnv: process.env,
 	server: {
 		/** Jobs processed in parallel per worker. */

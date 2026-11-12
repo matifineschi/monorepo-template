@@ -10,10 +10,11 @@
 			"outputs": [".next/**", "!.next/cache/**", "dist/**"],
 			"env": [
 				"NEXT_PUBLIC_*",
-				"DATABASE_URL",
-				"BETTER_AUTH_URL",
 				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
 				"CORS_ORIGIN",
+				"DATABASE_URL",
+				"LOG_LEVEL",
 				"PORT",
 				"REDIS_URL",
 				"STORAGE_*"

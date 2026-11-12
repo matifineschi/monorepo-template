@@ -13,8 +13,10 @@
 	},
 	"dependencies": {
 		"@repo/env": "workspace:*",
+		"@repo/logger": "workspace:*",
 		"@repo/queues": "workspace:*",
 		"@repo/storage": "workspace:*",
+		"@repo/utils": "workspace:*",
 		"@t3-oss/env-core": "catalog:",
 		"bullmq": "^5.56.3",
 		"zod": "catalog:"
