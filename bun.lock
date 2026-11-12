@@ -232,7 +232,7 @@
     "react-dom": "^19.2.0",
     "turbo": "^2.11.11",
     "typescript": "7.0.2",
-    "zod": "^4.3.6",
+    "zod": "^4.6.7",
   },
   "packages": {
     "@astryxdesign/cli": ["@astryxdesign/cli@0.7.14", "", { "dependencies": { "@babel/core": "7.29.7", "@babel/parser": "7.29.8", "@babel/plugin-transform-typescript": "7.29.7", "@babel/types": "7.29.8", "@stylexjs/babel-plugin": "^0.19.1", "ast-types": "0.16.3", "commander": "^12.1.0", "ignore": "^7.0.14", "jiti": "^2.7.0", "jscodeshift": "^17.4.0", "linkedom": "^0.18.15", "node-diff3": "3.2.1", "postcss": "^8.5.23", "postcss-selector-parser": "^7.1.6", "recast": "0.23.21", "zod": "^4.6.7" }, "peerDependencies": { "@astryxdesign/core": "*" }, "optionalPeers": ["@astryxdesign/core"], "bin": { "cli": "./clients/cli/bin/astryx.mjs", "astryx": "./clients/cli/bin/astryx.mjs" } }, "sha512-gOTskkep8h0IyeFKCl/vSs/H8CGF8zusiK3hEPWu2naxUzt4fU50OCEhsNpkyJi/0QcOMp9PjfRHlT7wn17mrA=="],
