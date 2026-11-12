@@ -20,7 +20,7 @@
 		"@repo/storage": "workspace:*",
 		"@t3-oss/env-core": "catalog:",
 		"bullmq": "^5.56.3",
-		"hono": "^4.7.11",
+		"hono": "^4.13.18",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
