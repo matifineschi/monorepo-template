@@ -28,7 +28,7 @@
 	"dependencies": {
 		"@repo/env": "workspace:*",
 		"@t3-oss/env-core": "catalog:",
-		"bullmq": "^5.56.3",
+		"bullmq": "^6.7.5",
 		"ioredis": "^5.6.1",
 		"zod": "catalog:"
 	},

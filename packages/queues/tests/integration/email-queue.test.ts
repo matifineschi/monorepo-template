@@ -50,8 +50,12 @@ describe("email queue", () => {
 		expect(read?.opts.backoff).toEqual({ type: "exponential", delay: 1000 });
 	});
 
-	/** Proves createRedisConnection() actually read REDIS_URL end to end. */
+	/**
+	 * Proves createRedisConnection() actually read REDIS_URL end to end.
+	 * BullMQ 6 keeps the Redis client on the backend, not on Queue.
+	 */
 	test("reports a live connection", async () => {
-		expect(await queue.client.then((client) => client.ping())).toBe("PONG");
+		const info = await (await queue.getBackend().client).info();
+		expect(info).toContain("redis_version");
 	});
 });
