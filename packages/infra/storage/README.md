@@ -71,14 +71,14 @@ get the database as a second ownership check.
 
 ## Configuration
 
-| Variable | Notes |
-|---|---|
-| `STORAGE_ENDPOINT` | `http://localhost:9000` for the local Silo |
-| `STORAGE_REGION` | Defaults to `auto` |
-| `STORAGE_ACCESS_KEY_ID` | `minioadmin` locally |
-| `STORAGE_SECRET_ACCESS_KEY` | `minioadmin` locally |
-| `STORAGE_BUCKET` | `app-uploads` locally, created by the `minio-createbucket` job |
-| `STORAGE_FORCE_PATH_STYLE` | `true` for Silo and most S3-compatible services; **`false` for real AWS S3**, which wants virtual-hosted style |
+| Variable                    | Notes                                                                                                          |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `STORAGE_ENDPOINT`          | `http://localhost:9000` for the local Silo                                                                     |
+| `STORAGE_REGION`            | Defaults to `auto`                                                                                             |
+| `STORAGE_ACCESS_KEY_ID`     | `minioadmin` locally                                                                                           |
+| `STORAGE_SECRET_ACCESS_KEY` | `minioadmin` locally                                                                                           |
+| `STORAGE_BUCKET`            | `app-uploads` locally, created by the `minio-createbucket` job                                                 |
+| `STORAGE_FORCE_PATH_STYLE`  | `true` for Silo and most S3-compatible services; **`false` for real AWS S3**, which wants virtual-hosted style |
 
 Both `apps/api` and `apps/workers` need these, and they must match — the API
 presigns uploads into the bucket the workers delete from.

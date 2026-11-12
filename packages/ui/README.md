@@ -3,7 +3,7 @@
 The app's **theme layer** for [Astryx](https://astryx.atmeta.com), Meta's open
 source design system.
 
-This is deliberately *not* a component library. Apps import components straight
+This is deliberately _not_ a component library. Apps import components straight
 from `@astryxdesign/core`:
 
 ```tsx
@@ -17,16 +17,16 @@ What lives here is only the two things an app cannot import per-component.
 
 The design system's three stylesheets, in cascade-layer order:
 
-| Import | Layer |
-|---|---|
-| `@astryxdesign/core/reset.css` | `reset` |
-| `@astryxdesign/core/astryx.css` | `astryx-base` (component styles) |
+| Import                                  | Layer                            |
+| --------------------------------------- | -------------------------------- |
+| `@astryxdesign/core/reset.css`          | `reset`                          |
+| `@astryxdesign/core/astryx.css`         | `astryx-base` (component styles) |
 | `@astryxdesign/theme-neutral/theme.css` | `astryx-theme` (token overrides) |
 
 Plus the theme's own `fonts.css`.
 
 **The order is load-bearing, and so is where this file is imported.** It must be
-the *first* stylesheet the page loads, because it is what names the layers — a
+the _first_ stylesheet the page loads, because it is what names the layers — a
 stylesheet that loads before it silently inverts the cascade, with a clean build
 and a clean console. That is why `apps/web/app/layout.tsx` imports
 `./globals.css` on its first line, above every other import.

@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.6.7/schema.json",
 	"root": true,
 	"vcs": {
 		"enabled": true,
@@ -55,10 +55,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
-			"nursery": {
-				"noImportCycles": "error"
-			},
+			"preset": "recommended",
 			"performance": {
 				"noReExportAll": "error"
 			},
@@ -84,11 +81,22 @@
 			},
 			"suspicious": {
 				"noConsole": "error",
-				"noExplicitAny": "error"
+				"noExplicitAny": "error",
+				"noImportCycles": "error"
 			}
 		}
 	},
 	"overrides": [
+		{
+			"includes": ["apps/web/public/**"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"noSvgWithoutTitle": "off"
+					}
+				}
+			}
+		},
 		{
 			"includes": ["packages/infra/auth/**"],
 			"linter": {

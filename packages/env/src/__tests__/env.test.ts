@@ -49,16 +49,13 @@ describe("shouldSkipEnvValidation", () => {
 	 * and transforms never run, so tests would exercise types production never
 	 * sees (see any workspace's test-setup.ts).
 	 */
-	test.each([
-		"db:generate",
-		"db:migrate",
-		"db:push",
-		"build",
-		"test",
-	])("does not skip during %s", (event) => {
-		process.env.npm_lifecycle_event = event;
-		expect(shouldSkipEnvValidation()).toBe(false);
-	});
+	test.each(["db:generate", "db:migrate", "db:push", "build", "test"])(
+		"does not skip during %s",
+		(event) => {
+			process.env.npm_lifecycle_event = event;
+			expect(shouldSkipEnvValidation()).toBe(false);
+		},
+	);
 
 	test("does not skip with neither signal set", () => {
 		expect(shouldSkipEnvValidation()).toBe(false);

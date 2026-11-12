@@ -17,16 +17,12 @@ describe("userPrefix", () => {
 		expect(userPrefix("user-1")).toBe("uploads/user-1/");
 	});
 
-	test.each([
-		"../evil",
-		"a/b",
-		"",
-		"user 1",
-		"user\0",
-		"..",
-	])("refuses to build a prefix from %p", (userId) => {
-		expect(() => userPrefix(userId)).toThrow();
-	});
+	test.each(["../evil", "a/b", "", "user 1", "user\0", ".."])(
+		"refuses to build a prefix from %p",
+		(userId) => {
+			expect(() => userPrefix(userId)).toThrow();
+		},
+	);
 });
 
 describe("uploadKey", () => {

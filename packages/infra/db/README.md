@@ -72,8 +72,8 @@ import { createUser } from "@repo/db/operations/users";
 import { recordSignup } from "@repo/db/operations/signups";
 
 await withTransaction(async (tx) => {
-  await createUser(input, tx);
-  await recordSignup(input.id, tx);
+	await createUser(input, tx);
+	await recordSignup(input.id, tx);
 });
 ```
 
@@ -121,10 +121,12 @@ since `@repo/storage` is deliberately stateless):
 4. **`package.json`** — add `"./operations/files"` to `exports`. Every operations
    file is its own subpath export.
 5. **Generate and apply**:
+
    ```sh
    bun run --filter @repo/db db:generate
    bun run --filter @repo/db db:migrate
    ```
+
    Commit the generated SQL **and** the snapshot in `migrations/meta/`.
 6. **Test it** — a unit test for any pure helper in `src/**/__tests__/`, and an
    integration test for the operations in `tests/integration/`.
@@ -163,7 +165,7 @@ The consequences worth knowing:
 
 `public.users` has RLS enabled with a `users_all_own` policy keyed on
 `current_setting('app.user_id')`. But the local Docker connection is the
-`postgres` superuser *and* the table owner, so **RLS is bypassed entirely** and
+`postgres` superuser _and_ the table owner, so **RLS is bypassed entirely** and
 the integration tests do not exercise the policy. A green suite is not evidence
 that RLS works.
 

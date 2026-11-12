@@ -9,7 +9,7 @@
 		"@types/node": "^22.15.3",
 		"@types/react": "19.2.2",
 		"@types/react-dom": "19.2.2",
-		"@biomejs/biome": "2.3.8",
+		"@biomejs/biome": "2.6.7",
 		"turbo": "^2.9.5",
 		"@turbo/gen": "^2.9.5",
 		"@t3-oss/env-core": "^0.13.10",

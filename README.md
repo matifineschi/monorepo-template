@@ -62,12 +62,12 @@ Run the migrations and start everything:
 bun run --filter @repo/db db:migrate && bun run dev
 ```
 
-| Service | URL |
-|---|---|
-| Web | http://localhost:3000 |
-| API | http://localhost:3001 |
-| Drizzle Gateway (DB inspector) | http://localhost:3002 |
-| Silo console | http://localhost:9001 (minioadmin / minioadmin) |
+| Service                        | URL                                             |
+| ------------------------------ | ----------------------------------------------- |
+| Web                            | http://localhost:3000                           |
+| API                            | http://localhost:3001                           |
+| Drizzle Gateway (DB inspector) | http://localhost:3002                           |
+| Silo console                   | http://localhost:9001 (minioadmin / minioadmin) |
 
 Postgres listens on **5430**, not the default 5432, to avoid clashing with a local install.
 
@@ -93,27 +93,27 @@ packages/
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `bun run dev` | Start all apps in dev mode |
-| `bun run build` | Build everything |
-| `bun run typecheck` | Type-check all packages |
-| `bun run format` | Apply Biome fixes and organize imports |
-| `bun run format:check` | Check formatting and lint without writing |
-| `bun run lint:ws` | Check dependency versions across workspaces (sherif) |
-| `bun run test` | Run unit tests — no Docker needed |
-| `bun run test:integration` | Run integration tests (requires the test stack) |
-| `bun run ci` | Everyday gate: format check + sherif + typecheck + unit tests |
-| `bun run ci:full` | Ship gate: `ci` + knip + build + integration tests |
-| `bun run knip` | Find unused code and dependencies |
-| `bun run db:up` | Start the dev Docker stack |
-| `bun run db:wait` | Start it and block until healthy |
-| `bun run db:down` | Stop the containers |
-| `bun run db:reset` | Destroy and recreate the volumes |
-| `bun run test-infra:up` | Start the test Docker stack and wait for health |
-| `bun run test-infra:down` | Stop it and drop its volume |
-| `bun run test-infra:logs` | Last 200 lines from the test stack |
-| `bun run gen:package` | Scaffold a new workspace package |
+| Command                    | Description                                                   |
+| -------------------------- | ------------------------------------------------------------- |
+| `bun run dev`              | Start all apps in dev mode                                    |
+| `bun run build`            | Build everything                                              |
+| `bun run typecheck`        | Type-check all packages                                       |
+| `bun run format`           | Apply Biome fixes and organize imports                        |
+| `bun run format:check`     | Check formatting and lint without writing                     |
+| `bun run lint:ws`          | Check dependency versions across workspaces (sherif)          |
+| `bun run test`             | Run unit tests — no Docker needed                             |
+| `bun run test:integration` | Run integration tests (requires the test stack)               |
+| `bun run ci`               | Everyday gate: format check + sherif + typecheck + unit tests |
+| `bun run ci:full`          | Ship gate: `ci` + knip + build + integration tests            |
+| `bun run knip`             | Find unused code and dependencies                             |
+| `bun run db:up`            | Start the dev Docker stack                                    |
+| `bun run db:wait`          | Start it and block until healthy                              |
+| `bun run db:down`          | Stop the containers                                           |
+| `bun run db:reset`         | Destroy and recreate the volumes                              |
+| `bun run test-infra:up`    | Start the test Docker stack and wait for health               |
+| `bun run test-infra:down`  | Stop it and drop its volume                                   |
+| `bun run test-infra:logs`  | Last 200 lines from the test stack                            |
+| `bun run gen:package`      | Scaffold a new workspace package                              |
 
 ## Environment Variables
 
@@ -121,12 +121,12 @@ Every app owns a `.env.example` documenting what it needs and why. There is no
 root `.env` — under `turbo run dev` each app runs with its own workspace as cwd
 and only reads from there.
 
-| File | Owns |
-|---|---|
-| [apps/web/.env.example](./apps/web/.env.example) | Database, auth, `NEXT_PUBLIC_APP_URL` |
-| [apps/api/.env.example](./apps/api/.env.example) | Database, auth, Redis, storage, CORS, port, log level |
-| [apps/workers/.env.example](./apps/workers/.env.example) | Redis, storage, concurrency, log level |
-| [packages/infra/db/.env.example](./packages/infra/db/.env.example) | `DATABASE_URL` for drizzle-kit |
+| File                                                               | Owns                                                  |
+| ------------------------------------------------------------------ | ----------------------------------------------------- |
+| [apps/web/.env.example](./apps/web/.env.example)                   | Database, auth, `NEXT_PUBLIC_APP_URL`                 |
+| [apps/api/.env.example](./apps/api/.env.example)                   | Database, auth, Redis, storage, CORS, port, log level |
+| [apps/workers/.env.example](./apps/workers/.env.example)           | Redis, storage, concurrency, log level                |
+| [packages/infra/db/.env.example](./packages/infra/db/.env.example) | `DATABASE_URL` for drizzle-kit                        |
 
 Values are validated with Zod at process start, so a missing or malformed
 variable fails immediately with the variable named — not later, mid-request.
@@ -140,9 +140,9 @@ bun run test-infra:up     # bring the test stack up and wait for health
 bun run test:integration  # integration — real Postgres, Redis, MinIO
 ```
 
-| Layer | Location | Talks to |
-|---|---|---|
-| Unit | `src/**/__tests__/*.test.ts` | nothing |
+| Layer       | Location                      | Talks to                                    |
+| ----------- | ----------------------------- | ------------------------------------------- |
+| Unit        | `src/**/__tests__/*.test.ts`  | nothing                                     |
 | Integration | `tests/integration/*.test.ts` | the test stack in `docker-compose.test.yml` |
 
 Integration tests run against a **separate docker stack** on offset ports
@@ -186,11 +186,11 @@ chain, both of which pino's default serializer drops.
 [.github/workflows/ci.yml](./.github/workflows/ci.yml) runs on every pull
 request, on pushes to `main`, and in a merge group:
 
-| Job | What it runs |
-|---|---|
-| check | `bun run ci`, then `bun run knip` |
+| Job         | What it runs                                                         |
+| ----------- | -------------------------------------------------------------------- |
+| check       | `bun run ci`, then `bun run knip`                                    |
 | integration | brings up `docker-compose.test.yml`, then `bun run test:integration` |
-| build | copies each `.env.example` to `.env`, then `bun run build` |
+| build       | copies each `.env.example` to `.env`, then `bun run build`           |
 
 CI uses the same compose file developers use, so the two cannot drift.
 

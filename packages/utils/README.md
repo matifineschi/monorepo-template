@@ -30,8 +30,8 @@ drops both.
 
 ```ts
 throw createError("Presign failed", {
-  cause: error,
-  context: { bucket, key },
+	cause: error,
+	context: { bucket, key },
 });
 ```
 

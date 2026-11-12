@@ -50,14 +50,14 @@ The hook can fire more than once for the same id across retries, which is why
 
 Both **must hold identical values in `apps/web/.env` and `apps/api/.env`** —
 sessions minted by one service will not validate in the other otherwise.
-`BETTER_AUTH_URL` is the origin that *issues* the cookie, i.e. the web app.
+`BETTER_AUTH_URL` is the origin that _issues_ the cookie, i.e. the web app.
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `bun run typecheck` | `tsc --noEmit` |
-| `bun run test` | Unit tests |
+| Command              | What it does                                        |
+| -------------------- | --------------------------------------------------- |
+| `bun run typecheck`  | `tsc --noEmit`                                      |
+| `bun run test`       | Unit tests                                          |
 | `bun run gen:schema` | Regenerate and patch the better-auth Drizzle schema |
 
 Run `bun run format` from the repo root to apply fixes across the monorepo.

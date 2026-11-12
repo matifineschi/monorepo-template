@@ -19,8 +19,8 @@ Pass **structured fields, not interpolated strings**:
 ```ts
 import { logger } from "@repo/logger";
 
-logger.info({ userId, durationMs }, "User provisioned");   // filterable
-logger.info(`provisioned ${userId} in ${durationMs}ms`);   // a haystack
+logger.info({ userId, durationMs }, "User provisioned"); // filterable
+logger.info(`provisioned ${userId} in ${durationMs}ms`); // a haystack
 ```
 
 `childLogger` tags every line from one component, which is what makes a worker's

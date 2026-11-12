@@ -35,15 +35,15 @@ bun run --filter @repo/db db:migrate
 bun run dev
 ```
 
-| Service | Port | Notes |
-|---|---|---|
-| web | 3000 | Next.js |
-| api | 3001 | Hono on Bun |
-| drizzle-gateway | 3002 | DB inspector UI |
-| postgres | 5430 | Host mapping; container is on 5432 |
-| redis | 6379 | |
-| minio | 9000 | S3 API. Image is `pgsty/silo`, not `minio/minio` |
-| minio console | 9001 | minioadmin / minioadmin |
+| Service         | Port | Notes                                            |
+| --------------- | ---- | ------------------------------------------------ |
+| web             | 3000 | Next.js                                          |
+| api             | 3001 | Hono on Bun                                      |
+| drizzle-gateway | 3002 | DB inspector UI                                  |
+| postgres        | 5430 | Host mapping; container is on 5432               |
+| redis           | 6379 |                                                  |
+| minio           | 9000 | S3 API. Image is `pgsty/silo`, not `minio/minio` |
+| minio console   | 9001 | minioadmin / minioadmin                          |
 
 Postgres is on **5430, not 5432**, deliberately, so it doesn't clash with a
 locally-installed Postgres.
@@ -51,11 +51,11 @@ locally-installed Postgres.
 The test stack in `docker-compose.test.yml` is separate and runs at the same
 time, on offset ports:
 
-| Service | Port |
-|---|---|
-| test postgres | 54322 |
-| test redis | 63792 |
-| test minio | 59002 (console 59003) |
+| Service       | Port                  |
+| ------------- | --------------------- |
+| test postgres | 54322                 |
+| test redis    | 63792                 |
+| test minio    | 59002 (console 59003) |
 
 Two stacks because integration suites drop databases and empty buckets — which
 is correct there and destructive against the stack `bun run dev` is using. See
@@ -91,7 +91,7 @@ better-auth, a bucket. Everything else goes in `packages/*`.
 
 - **Bun 1.3.10**, pinned via `packageManager`. Do not use `npm` or `pnpm`.
   Add dependencies with `bun add <pkg> --filter=<workspace>`.
-- **Biome 2.3** is the only linter and formatter, configured in **one file at the
+- **Biome 2.6** is the only linter and formatter, configured in **one file at the
   repo root**. **Tabs for indentation, double quotes for strings.** Packages do
   not carry their own `biome.json` and there are no per-package `lint` scripts —
   there were, with a second rule set that disagreed with the root one, which is
@@ -119,22 +119,22 @@ confusing ways if two versions end up in the tree.
 
 ## Daily commands
 
-| Command | What it does |
-|---|---|
-| `bun run dev` | All apps in parallel |
-| `bun run build` | Build all apps |
-| `bun run format` | `biome check --write .` — applies fixes and organizes imports |
-| `bun run format:check` | Same checks, no writes (what pre-commit runs) |
-| `bun run lint:ws` | sherif — dependency versions across workspaces |
-| `bun run typecheck` | `tsc --noEmit` everywhere |
-| `bun run test` | Unit tests. No docker needed |
-| `bun run test:integration` | Integration tests (needs `test-infra:up`) |
-| `bun run ci` | `biome check .` + sherif + typecheck + unit tests |
-| `bun run ci:full` | `ci` + knip + build + integration tests |
-| `bun run knip` | Unused files, exports, and dependencies |
-| `bun run db:up` / `db:wait` / `db:down` / `db:reset` | Dev docker stack |
-| `bun run test-infra:up` / `test-infra:down` / `test-infra:logs` | Test docker stack |
-| `bun run gen:package` | Scaffold a new workspace package |
+| Command                                                         | What it does                                                  |
+| --------------------------------------------------------------- | ------------------------------------------------------------- |
+| `bun run dev`                                                   | All apps in parallel                                          |
+| `bun run build`                                                 | Build all apps                                                |
+| `bun run format`                                                | `biome check --write .` — applies fixes and organizes imports |
+| `bun run format:check`                                          | Same checks, no writes (what pre-commit runs)                 |
+| `bun run lint:ws`                                               | sherif — dependency versions across workspaces                |
+| `bun run typecheck`                                             | `tsc --noEmit` everywhere                                     |
+| `bun run test`                                                  | Unit tests. No docker needed                                  |
+| `bun run test:integration`                                      | Integration tests (needs `test-infra:up`)                     |
+| `bun run ci`                                                    | `biome check .` + sherif + typecheck + unit tests             |
+| `bun run ci:full`                                               | `ci` + knip + build + integration tests                       |
+| `bun run knip`                                                  | Unused files, exports, and dependencies                       |
+| `bun run db:up` / `db:wait` / `db:down` / `db:reset`            | Dev docker stack                                              |
+| `bun run test-infra:up` / `test-infra:down` / `test-infra:logs` | Test docker stack                                             |
+| `bun run gen:package`                                           | Scaffold a new workspace package                              |
 
 `db:wait` blocks on the postgres, redis and minio healthchecks. `test-infra:up`
 passes `--wait`, which does the same for the test stack — that is what makes
@@ -214,8 +214,8 @@ Two packages, `@repo/utils` and `@repo/logger`, and the rules are short.
 
 ```ts
 throw createError("Upload is not durable", {
-  cause: error,
-  context: { bucket, key },
+	cause: error,
+	context: { bucket, key },
 });
 ```
 
@@ -332,11 +332,11 @@ one transient failure into a permanent one.
 **There is no root `.env`.** Each app runs with its own workspace as cwd and only
 reads from there, so every app owns a `.env.example`:
 
-| File | Owner |
-|---|---|
-| `apps/web/.env.example` | the web app |
-| `apps/api/.env.example` | the API |
-| `apps/workers/.env.example` | the workers |
+| File                             | Owner                                            |
+| -------------------------------- | ------------------------------------------------ |
+| `apps/web/.env.example`          | the web app                                      |
+| `apps/api/.env.example`          | the API                                          |
+| `apps/workers/.env.example`      | the workers                                      |
 | `packages/infra/db/.env.example` | drizzle-kit, which runs with that package as cwd |
 
 The ownership rule:
@@ -363,7 +363,7 @@ allowlist (format, lint, typecheck, knip, gen:schema). `db:generate`,
 real values, and a named validation error beats a connection error.
 
 **The standing rule:** a new variable for an integration goes into that package's
-`src/env.ts` *and* every consuming app's `.env.example`, in the same commit.
+`src/env.ts` _and_ every consuming app's `.env.example`, in the same commit.
 
 **Never read `process.env` outside a `src/env.ts`.** `style/noProcessEnv` is an
 error. The exceptions, and the only ones, are the `env.ts` files themselves,
@@ -380,9 +380,9 @@ one requires a rebuild, not a restart.
 
 `bun test` only. No vitest, no jest, no playwright.
 
-| Layer | Location | Script | Talks to |
-|---|---|---|---|
-| Unit | `src/**/__tests__/*.test.ts` | `bun test src` | nothing |
+| Layer       | Location                      | Script                                                             | Talks to                                    |
+| ----------- | ----------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
+| Unit        | `src/**/__tests__/*.test.ts`  | `bun test src`                                                     | nothing                                     |
 | Integration | `tests/integration/*.test.ts` | `bun test --preload ./test-setup.integration.ts tests/integration` | the test stack in `docker-compose.test.yml` |
 
 The two directories **must stay disjoint**: `bun test <arg>` filters by path
@@ -403,11 +403,11 @@ wired with `--preload` rather than `bunfig.toml` so that `bun test src` still
 needs no docker at all. It points the run at the **test** stack and provisions
 the external state it needs:
 
-| What | From | Isolation |
-|---|---|---|
-| Postgres | `@repo/db/testing/database` | a database cloned from a migrated template, dropped at the end |
-| Bucket | `@repo/storage/testing/bucket` | a bucket of its own, emptied and removed at the end |
-| Redis | `@repo/queues/testing/prefix` | a BullMQ key prefix of its own, unlinked at the end |
+| What     | From                           | Isolation                                                      |
+| -------- | ------------------------------ | -------------------------------------------------------------- |
+| Postgres | `@repo/db/testing/database`    | a database cloned from a migrated template, dropped at the end |
+| Bucket   | `@repo/storage/testing/bucket` | a bucket of its own, emptied and removed at the end            |
+| Redis    | `@repo/queues/testing/prefix`  | a BullMQ key prefix of its own, unlinked at the end            |
 
 The database trick is worth understanding. Migrations are applied **once** into
 a template database named after a fingerprint of `migrations/`, and each run
@@ -461,7 +461,7 @@ Rules for integration tests:
   state and give the run its own, the way the three provisioning helpers do.
   Do not reach for `--concurrency=1`.
 
-**RLS caveat:** the connection is the `postgres` superuser *and* the table owner,
+**RLS caveat:** the connection is the `postgres` superuser _and_ the table owner,
 so `users_all_own` is bypassed entirely and integration tests do not exercise it.
 A green suite is not evidence that RLS works.
 
@@ -511,7 +511,7 @@ The rules, in priority order:
 - **`globals.css` must be the first stylesheet the page loads.** It names the
   cascade layers (`reset` → `astryx-base` → `astryx-theme`), and a stylesheet that
   loads before it silently inverts the cascade with a clean build and console.
-- **Astryx's `Icon` is a client component, and an icon *component* cannot cross
+- **Astryx's `Icon` is a client component, and an icon _component_ cannot cross
   the server/client boundary as a prop.** A server component that wants icons puts
   them in a small `"use client"` child that imports them itself —
   `app/(dashboard)/_components/dashboard-overview.tsx` is the worked example.
@@ -619,7 +619,7 @@ fails instead of silently resolving.
 
 Everything below this line is **generated** by `bun run astryx init` and refreshed by
 `astryx upgrade`. Do not hand-edit it — edits are lost on the next refresh, and the
-`ASTRYX:START`/`ASTRYX:END` markers are what the CLI anchors to. Everything *above*
+`ASTRYX:START`/`ASTRYX:END` markers are what the CLI anchors to. Everything _above_
 this line is hand-written.
 
 <!-- ASTRYX:START -->
@@ -627,29 +627,31 @@ Astryx v0.7.14 · 174 components
 CLI: run every command as `bunx astryx <cmd>` (shown below as `astryx ...`).
 
 SETUP (once, in app entry e.g. main.tsx) — without these, components render unstyled:
-  import "@astryxdesign/core/reset.css";
-  import "@astryxdesign/core/astryx.css";
+import "@astryxdesign/core/reset.css";
+import "@astryxdesign/core/astryx.css";
 
 WORKFLOW — start every page from a template, never from scratch:
+
 1. `astryx build "<idea>"` — names the template to scaffold from and the parts it lacks.
 2. `astryx template <name> <path>` — scaffold it; keep its frame, gap and padding; replace the content.
 3. `astryx template <Block>` for parts it lacks; `astryx component <Name>` to read props before using one.
-Changing an existing page? Keep it: skip step 2 and add blocks/components inside its sections.
-Before you deliver a build, run `astryx doctor --built <dir>`; don't deliver it if it fails.
+   Changing an existing page? Keep it: skip step 2 and add blocks/components inside its sections.
+   Before you deliver a build, run `astryx doctor --built <dir>`; don't deliver it if it fails.
 
 RULES:
+
 - No <div> — components handle all layout and spacing.
 - Read `astryx docs layout` before changing a template's frame.
 - Dense data = rows (Table, List/Item), not Card-wrapped lists. Badge = counts only.
-- Style with component props first, then tokens (var(--color-*|--spacing-*|--radius-*)). No raw hex/px. No StyleX/Tailwind compiler here — don't use xstyle/utility classes directly. Some templates use StyleX and need a compiler plugin; see `astryx docs styling-overview`.
+- Style with component props first, then tokens (var(--color-_|--spacing-_|--radius-*)). No raw hex/px. No StyleX/Tailwind compiler here — don't use xstyle/utility classes directly. Some templates use StyleX and need a compiler plugin; see `astryx docs styling-overview`.
 - Palettes and custom colors go through the theme, never :root overrides. Run `astryx theme add <slug>` to import; `theme eject <slug>` only forks source. See `astryx docs theme`.
 - SELF-CHECK: re-read the file; replace any raw <div>/<span>, imported .css/@apply, or hardcoded #hex/px with the component or a token.
 
 `astryx help` lists every command. Key ones beyond the workflow:
-  search "<query>"   find any component / hook / doc / template
-  discover <words>   integrations you could add
-  docs <topic>       getting-started, principles, tokens, theme … (`astryx docs` lists all)
-  docs cli           commands and API reference
-  docs authoring     build an integration package, and every field it holds
-  upgrade --from <old version> --apply   run after a dependency bump
+search "<query>" find any component / hook / doc / template
+discover <words> integrations you could add
+docs <topic> getting-started, principles, tokens, theme … (`astryx docs` lists all)
+docs cli commands and API reference
+docs authoring build an integration package, and every field it holds
+upgrade --from <old version> --apply run after a dependency bump
 <!-- ASTRYX:END -->
