@@ -4,17 +4,15 @@ import { z } from "zod";
 import { authEnv } from "@repo/auth/env";
 import { databaseEnv } from "@repo/db/env";
 import { shouldSkipEnvValidation } from "@repo/env";
+import { baseEnv } from "@repo/env/base";
 import { queuesEnv } from "@repo/queues/env";
 import { storageEnv } from "@repo/storage/env";
 
 export const env = createEnv({
 	emptyStringAsUndefined: true,
-	extends: [databaseEnv, authEnv, queuesEnv, storageEnv],
+	extends: [baseEnv, databaseEnv, authEnv, queuesEnv, storageEnv],
 	runtimeEnv: process.env,
 	server: {
-		NODE_ENV: z
-			.enum(["development", "test", "production"])
-			.default("development"),
 		PORT: z.coerce.number().int().positive().default(3001),
 		/**
 		 * Required with no default: a fallback here would silently ship a

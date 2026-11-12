@@ -83,6 +83,7 @@
       "name": "@repo/env",
       "version": "0.1.0",
       "dependencies": {
+        "@t3-oss/env-core": "catalog:",
         "zod": "catalog:",
       },
       "devDependencies": {

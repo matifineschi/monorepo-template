@@ -8,6 +8,11 @@
 			"types": "./src/index.ts",
 			"import": "./src/index.ts",
 			"default": "./src/index.ts"
+		},
+		"./base": {
+			"types": "./src/base.ts",
+			"import": "./src/base.ts",
+			"default": "./src/base.ts"
 		}
 	},
 	"scripts": {
@@ -15,6 +20,7 @@
 		"test": "bun test src"
 	},
 	"dependencies": {
+		"@t3-oss/env-core": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
