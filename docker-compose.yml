@@ -44,8 +44,13 @@ services:
   # S3-compatible object storage for local dev. In production point the
   # STORAGE_* vars at a real bucket (S3, R2, Spaces, Railway) — no code changes.
   # Console UI: http://localhost:9001 (minioadmin / minioadmin).
+  #
+  # Silo, not minio/minio: Docker Hub deleted that repository (and minio/mc),
+  # and quay.io refuses anonymous pulls, so CI cannot fetch either. This tag
+  # still accepts `server /data` and ships `mc`, which the healthcheck and the
+  # bucket job both call. Keep the test stack's image on the same tag.
   minio:
-    image: minio/minio:latest
+    image: docker.io/pgsty/silo:RELEASE.2026-11-12T00-00-00Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -63,8 +68,9 @@ services:
 
   # One-shot: creates the bucket on startup, then exits. Idempotent — safe to
   # re-run on every `docker compose up`.
+  # Same image as `minio` — `mc` is bundled in it. minio/mc is gone from Docker Hub.
   minio-createbucket:
-    image: minio/mc:latest
+    image: docker.io/pgsty/silo:RELEASE.2026-11-12T00-00-00Z
     depends_on:
       minio:
         condition: service_healthy

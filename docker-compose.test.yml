@@ -52,8 +52,9 @@ services:
 
   # Buckets are created per run by `provisionTestBucket`, so unlike the dev
   # stack there is no one-shot bucket-creation container here.
+  # Keep this image on the same tag as the dev stack's `minio` service.
   test-minio:
-    image: minio/minio:latest
+    image: docker.io/pgsty/silo:RELEASE.2026-11-12T00-00-00Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin

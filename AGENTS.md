@@ -42,7 +42,7 @@ bun run dev
 | drizzle-gateway | 3002 | DB inspector UI |
 | postgres | 5430 | Host mapping; container is on 5432 |
 | redis | 6379 | |
-| minio | 9000 | S3 API |
+| minio | 9000 | S3 API. Image is `pgsty/silo`, not `minio/minio` |
 | minio console | 9001 | minioadmin / minioadmin |
 
 Postgres is on **5430, not 5432**, deliberately, so it doesn't clash with a
@@ -284,8 +284,10 @@ the worked example.
 reaches for the SDK directly bypasses `isOwnedBy`, so `noRestrictedImports`
 makes that a build failure rather than a review comment.
 
-It fronts any S3-compatible bucket — MinIO locally, S3/R2/Spaces in
-production. Swapping providers is an env change, not a code change.
+It fronts any S3-compatible bucket — Silo (MinIO-compatible) locally, S3/R2/Spaces
+in production. Swapping providers is an env change, not a code change. The
+compose image is `pgsty/silo` because Docker Hub removed `minio/minio` and
+`minio/mc`.
 
 The upload flow is **presigned**:
 
