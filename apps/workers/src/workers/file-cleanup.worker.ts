@@ -2,7 +2,7 @@ import { Worker } from "bullmq";
 
 import { childLogger } from "@repo/logger";
 import type { DeleteFileJob } from "@repo/queues";
-import { createRedisConnection, QUEUE_NAMES } from "@repo/queues";
+import { QUEUE_NAMES, queueConnectionOptions } from "@repo/queues";
 import { deleteObject } from "@repo/storage";
 import { createError } from "@repo/utils/error";
 
@@ -44,7 +44,7 @@ export function startFileCleanupWorker(
 		QUEUE_NAMES.files,
 		async (job) => processFileCleanupJob(job.data, options.remove),
 		{
-			connection: createRedisConnection(),
+			...queueConnectionOptions(),
 			concurrency: options.concurrency ?? 5,
 		},
 	);

@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
 
-import { createRedisConnection } from "./connection";
+import { queueConnectionOptions } from "./connection";
 import type { DeleteFileJob, SendWelcomeEmailJob } from "./jobs";
 import { QUEUE_NAMES } from "./jobs";
 
@@ -14,14 +14,14 @@ const defaultJobOptions = {
 
 export function createEmailQueue() {
 	return new Queue<SendWelcomeEmailJob>(QUEUE_NAMES.email, {
-		connection: createRedisConnection(),
+		...queueConnectionOptions(),
 		defaultJobOptions,
 	});
 }
 
 export function createFileQueue() {
 	return new Queue<DeleteFileJob>(QUEUE_NAMES.files, {
-		connection: createRedisConnection(),
+		...queueConnectionOptions(),
 		defaultJobOptions,
 	});
 }

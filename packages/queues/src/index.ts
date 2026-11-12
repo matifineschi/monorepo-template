@@ -1,4 +1,7 @@
-export { createRedisConnection } from "./connection";
+export {
+	createRedisConnection,
+	queueConnectionOptions,
+} from "./connection";
 export type {
 	DeleteFileJob,
 	JobPayload,

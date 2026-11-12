@@ -2,7 +2,7 @@ import { Worker } from "bullmq";
 
 import { childLogger } from "@repo/logger";
 import type { SendWelcomeEmailJob } from "@repo/queues";
-import { createRedisConnection, QUEUE_NAMES } from "@repo/queues";
+import { QUEUE_NAMES, queueConnectionOptions } from "@repo/queues";
 import { createError } from "@repo/utils/error";
 
 const log = childLogger({ worker: QUEUE_NAMES.email });
@@ -53,7 +53,7 @@ export function startEmailWorker(
 		QUEUE_NAMES.email,
 		async (job) => processEmailJob(job.data, options.send),
 		{
-			connection: createRedisConnection(),
+			...queueConnectionOptions(),
 			concurrency: options.concurrency ?? 5,
 		},
 	);
