@@ -13,7 +13,7 @@
 				"BETTER_AUTH_SECRET",
 				"BETTER_AUTH_URL",
 				"CORS_ORIGIN",
-				"DATABASE_URL",
+				"DATABASE_*",
 				"LOG_LEVEL",
 				"PORT",
 				"QUEUE_PREFIX",
@@ -33,7 +33,7 @@
 			"passThroughEnv": [
 				"BETTER_AUTH_SECRET",
 				"BETTER_AUTH_URL",
-				"DATABASE_URL",
+				"DATABASE_*",
 				"QUEUE_PREFIX",
 				"REDIS_URL",
 				"STORAGE_*"
