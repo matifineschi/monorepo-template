@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 
-import { db, schema } from "../client";
+import { type DbOrTx, db, schema } from "../client";
 
 type PublicUserProvisionInput = {
 	id: string;
@@ -39,13 +39,18 @@ export function getNameParts(
 /**
  * Idempotent: better-auth's user.create.after hook can fire more than once for
  * the same id across retries, and `onConflictDoNothing` is what keeps that safe.
+ *
+ * The trailing `executor` is the repo's convention for every operation: it
+ * defaults to the pool, and `withTransaction` from `@repo/db/transaction` is
+ * what passes something else.
  */
 export async function createUser(
 	input: PublicUserProvisionInput,
+	executor: DbOrTx = db,
 ): Promise<{ created: boolean }> {
 	const { firstName, lastName } = getNameParts(input);
 
-	const [createdUser] = await db
+	const [createdUser] = await executor
 		.insert(schema.users)
 		.values({
 			id: input.id,
@@ -60,8 +65,11 @@ export async function createUser(
 	return { created: Boolean(createdUser?.id) };
 }
 
-export async function getUserById(id: string): Promise<PublicUser | null> {
-	const [user] = await db
+export async function getUserById(
+	id: string,
+	executor: DbOrTx = db,
+): Promise<PublicUser | null> {
+	const [user] = await executor
 		.select({
 			id: schema.users.id,
 			firstName: schema.users.firstName,
@@ -75,6 +83,9 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
 	return user ?? null;
 }
 
-export async function deleteUserById(id: string): Promise<void> {
-	await db.delete(schema.users).where(eq(schema.users.id, id));
+export async function deleteUserById(
+	id: string,
+	executor: DbOrTx = db,
+): Promise<void> {
+	await executor.delete(schema.users).where(eq(schema.users.id, id));
 }

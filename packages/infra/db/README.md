@@ -6,8 +6,10 @@ Drizzle ORM over Postgres: schema, migrations, and the typed data-access layer.
 
 ```
 src/
-  client.ts       the drizzle client — internal to this package
-  env.ts          owns DATABASE_URL, exported as `databaseEnv` via @repo/db/env
+  client.ts       the drizzle client and the executor types — internal
+  transaction.ts  withTransaction, the only public door to the client
+  env.ts          owns DATABASE_URL and the pool settings, via @repo/db/env
+  errors.ts       Postgres error-code predicates, via @repo/db/errors
   schema/         one file per table, plus the index.ts barrel
   operations/     hand-written typed DAL, one file per domain
 migrations/       generated SQL + snapshots — never hand-edited
@@ -56,6 +58,53 @@ too: the integration tests here go through operations like everyone else, and
 client.
 
 Operations return plain shapes, not drizzle row types.
+
+### Every operation takes an executor
+
+The last parameter of every operation is `executor: DbOrTx = db`. The common
+call site passes nothing and runs on the pool. Passing something else is how two
+operations end up in one transaction:
+
+```ts
+import { withTransaction } from "@repo/db/transaction";
+import { createUser } from "@repo/db/operations/users";
+import { recordSignup } from "@repo/db/operations/signups";
+
+await withTransaction(async (tx) => {
+  await createUser(input, tx);
+  await recordSignup(input.id, tx);
+});
+```
+
+`withTransaction` is the only sanctioned way to reach `db.transaction`, which is
+why it lives in its own subpath rather than forcing apps to import the client.
+
+Two things to keep in mind. An operation you forget to pass `tx` to silently
+runs on the pool instead, outside the transaction, and will not roll back with
+it — that is the one failure mode of this pattern. And a transaction holds a
+connection for its whole duration, so never await an HTTP call inside one.
+
+### Distinguishing failures
+
+`@repo/db/errors` turns a driver error into something branchable. Drizzle wraps
+the driver error, so the Postgres code is down the `cause` chain rather than on
+the error you caught; everything in that module walks the chain for you.
+
+```ts
+import { isUniqueViolation } from "@repo/db/errors";
+import { tryAsyncResult } from "@repo/utils/result";
+import { err, ok } from "@repo/utils/result";
+
+const saved = await tryAsyncResult(() => createUser(input));
+if (!saved.ok) {
+  if (isUniqueViolation(saved.error)) return err("email-taken");
+  throw saved.error;
+}
+return ok(saved.value);
+```
+
+Pass a constraint name when a table has more than one unique index, or every one
+of them reports "already taken".
 
 ## Adding a table
 
@@ -109,5 +158,5 @@ bun run --filter @repo/db test          # unit tests
 bun run --filter @repo/db test:integration  # needs Postgres running
 ```
 
-Lint and format with Biome (`bun run lint` here, `bun run format` at the root).
-There is no Prettier in this repo.
+Linting and formatting are repo-wide: one Biome config at the root, run with
+`bun run format`. There is no Prettier and no per-package config.

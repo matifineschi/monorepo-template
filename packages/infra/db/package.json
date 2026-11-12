@@ -37,10 +37,21 @@
 			"types": "./src/operations/user-auth.ts",
 			"import": "./src/operations/user-auth.ts",
 			"default": "./src/operations/user-auth.ts"
+		},
+		"./errors": {
+			"types": "./src/errors.ts",
+			"import": "./src/errors.ts",
+			"default": "./src/errors.ts"
+		},
+		"./transaction": {
+			"types": "./src/transaction.ts",
+			"import": "./src/transaction.ts",
+			"default": "./src/transaction.ts"
 		}
 	},
 	"dependencies": {
 		"@repo/env": "workspace:*",
+		"@repo/utils": "workspace:*",
 		"@t3-oss/env-core": "catalog:",
 		"drizzle-orm": "^0.45.2",
 		"postgres": "^3.4.9",

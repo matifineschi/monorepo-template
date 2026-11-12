@@ -114,6 +114,7 @@
       "name": "@repo/db",
       "dependencies": {
         "@repo/env": "workspace:*",
+        "@repo/utils": "workspace:*",
         "@t3-oss/env-core": "catalog:",
         "drizzle-orm": "^0.45.2",
         "postgres": "^3.4.9",

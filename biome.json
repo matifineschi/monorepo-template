@@ -70,7 +70,7 @@
 					"level": "error",
 					"options": {
 						"paths": {
-							"@repo/db/client": "Apps and packages read the database through @repo/db/operations/*. The drizzle client is internal to @repo/db.",
+							"@repo/db/client": "Apps and packages read the database through @repo/db/operations/*. Compose several operations with withTransaction from @repo/db/transaction.",
 							"@aws-sdk/client-s3": "Object storage goes through @repo/storage, which owns the client, the presigned-upload flow and the key-ownership checks.",
 							"@aws-sdk/s3-request-presigner": "Object storage goes through @repo/storage."
 						}
