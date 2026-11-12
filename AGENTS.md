@@ -22,6 +22,7 @@ See [README.md](./README.md) for the human-facing overview.
 brew bundle                       # bun, node, docker, psql
 bun install                       # also installs the husky git hooks
 docker compose up -d              # postgres, redis, minio, drizzle-gateway
+bun run test-infra:up             # the separate stack the test suites use
 
 cp apps/web/.env.example          apps/web/.env
 cp apps/api/.env.example          apps/api/.env
@@ -47,6 +48,19 @@ bun run dev
 Postgres is on **5430, not 5432**, deliberately, so it doesn't clash with a
 locally-installed Postgres.
 
+The test stack in `docker-compose.test.yml` is separate and runs at the same
+time, on offset ports:
+
+| Service | Port |
+|---|---|
+| test postgres | 54322 |
+| test redis | 63792 |
+| test minio | 59002 (console 59003) |
+
+Two stacks because integration suites drop databases and empty buckets — which
+is correct there and destructive against the stack `bun run dev` is using. See
+[Testing](#testing).
+
 ## Repository layout
 
 ```
@@ -57,8 +71,9 @@ apps/
 packages/
   ui/           Astryx theme layer: globals.css + the Theme/Link providers
   queues/       BullMQ queue definitions and job payload types
-  env/          shouldSkipEnvValidation() + booleanFlag()
-  biome-config/ Shared Biome presets
+  utils/        createError + Result — the error model, used everywhere
+  logger/       pino, one config, every server process
+  env/          shouldSkipEnvValidation(), booleanFlag(), baseEnv
   typescript-config/ Shared tsconfig presets
   infra/
     db/         Drizzle schema, migrations, and the operations DAL
@@ -76,11 +91,20 @@ better-auth, a bucket. Everything else goes in `packages/*`.
 
 - **Bun 1.3.10**, pinned via `packageManager`. Do not use `npm` or `pnpm`.
   Add dependencies with `bun add <pkg> --filter=<workspace>`.
-- **Biome 2.3** is the only linter and formatter. **Tabs for indentation, double
-  quotes for strings.** Do not reintroduce ESLint or Prettier.
+- **Biome 2.3** is the only linter and formatter, configured in **one file at the
+  repo root**. **Tabs for indentation, double quotes for strings.** Packages do
+  not carry their own `biome.json` and there are no per-package `lint` scripts —
+  there were, with a second rule set that disagreed with the root one, which is
+  how the repo ended up formatting package files at 80 columns and root files at
+  120. Do not reintroduce ESLint or Prettier.
 - **TypeScript 5.9**, strict, with `noUncheckedIndexedAccess`. Shared config in
   `packages/typescript-config`.
 - **Turborepo 2.9** for task orchestration.
+- **sherif** (`bun run lint:ws`) checks dependency versions across workspaces.
+  It runs inside `bun run ci`. The one rule it is told to skip is
+  `packages-without-package-json`, because `packages/infra` is a grouping
+  directory that the `packages/*` glob matches and which has no package of its
+  own.
 - **Astryx** (`@astryxdesign/core`) is the design system — Meta's open source
   component library, built on React 19 and StyleX. It ships **pre-built CSS and
   JS**: there is no Tailwind, no PostCSS, no Babel and no build plugin.
@@ -99,20 +123,22 @@ confusing ways if two versions end up in the tree.
 |---|---|
 | `bun run dev` | All apps in parallel |
 | `bun run build` | Build all apps |
-| `bun run lint` | Biome via turbo |
 | `bun run format` | `biome check --write .` — applies fixes and organizes imports |
 | `bun run format:check` | Same checks, no writes (what pre-commit runs) |
+| `bun run lint:ws` | sherif — dependency versions across workspaces |
 | `bun run typecheck` | `tsc --noEmit` everywhere |
-| `bun run test` | Unit tests |
-| `bun run test:integration` | Integration tests (needs docker) |
-| `bun run ci` | `biome check . && turbo run typecheck test` |
-| `bun run ci:full` | `ci` + knip + build + migrate + integration tests |
+| `bun run test` | Unit tests. No docker needed |
+| `bun run test:integration` | Integration tests (needs `test-infra:up`) |
+| `bun run ci` | `biome check .` + sherif + typecheck + unit tests |
+| `bun run ci:full` | `ci` + knip + build + integration tests |
 | `bun run knip` | Unused files, exports, and dependencies |
-| `bun run db:up` / `db:wait` / `db:down` / `db:reset` | Docker stack |
+| `bun run db:up` / `db:wait` / `db:down` / `db:reset` | Dev docker stack |
+| `bun run test-infra:up` / `test-infra:down` / `test-infra:logs` | Test docker stack |
 | `bun run gen:package` | Scaffold a new workspace package |
 
-`db:wait` blocks on the postgres, redis and minio healthchecks — that is what
-makes `ci:full` deterministic instead of racy.
+`db:wait` blocks on the postgres, redis and minio healthchecks. `test-infra:up`
+passes `--wait`, which does the same for the test stack — that is what makes
+`ci:full` deterministic instead of racy.
 
 ## Database
 
@@ -134,7 +160,32 @@ The short version:
   `drizzle.config.ts` and the runtime `drizzle()` call. Both are required.
 - **Apps import `@repo/db/operations/*`, never `@repo/db/client`.** Every
   operations file is its own subpath export. The raw drizzle client is internal
-  to the package — including in tests.
+  to the package — including in tests. Biome's `noRestrictedImports` enforces
+  this; `@repo/auth` is the single exception, because better-auth's Drizzle
+  adapter needs the client itself.
+- **Every operation takes `executor: DbOrTx = db` as its last parameter.** The
+  usual call site passes nothing. Two operations share a transaction via
+  `withTransaction` from `@repo/db/transaction`, which is the only sanctioned
+  door to `db.transaction`:
+
+  ```ts
+  await withTransaction(async (tx) => {
+    await createUser(input, tx);
+    await recordSignup(input.id, tx);
+  });
+  ```
+
+  An operation you forget to pass `tx` to runs on the pool, outside the
+  transaction, and will not roll back with it. That is this pattern's one
+  failure mode. And a transaction holds a connection for its whole duration —
+  never await an HTTP call inside one.
+- **Distinguish failures with `@repo/db/errors`**, not by matching on message
+  text. `isUniqueViolation(error)` and friends walk the `cause` chain, because
+  drizzle wraps the driver error and the Postgres code is never on the error you
+  caught. Pass a constraint name when a table has more than one unique index.
+- **The pool is cached on `globalThis`.** Module identity is not stable under
+  Next HMR or `bun --hot`, so a module-level `postgres(...)` opens a fresh pool
+  on every save until the connection limit is gone. Do not "simplify" that away.
 
 ## Auth
 
@@ -154,6 +205,57 @@ silently no-op and you get tables in the wrong Postgres namespace. **After
 A new better-auth user is provisioned into `public.users` by the
 `databaseHooks.user.create.after` hook. That hook can fire more than once for the
 same id across retries, which is why `createUser` uses `onConflictDoNothing`.
+
+## Errors and logging
+
+Two packages, `@repo/utils` and `@repo/logger`, and the rules are short.
+
+**Build errors with `createError`**, from `@repo/utils/error`:
+
+```ts
+throw createError("Upload is not durable", {
+  cause: error,
+  context: { bucket, key },
+});
+```
+
+The message is **static** for a given failure class, so a log search groups
+every occurrence of it; incident detail goes in `context`. A message with an id
+interpolated into it is a message that matches nothing but itself.
+
+`ensureError` normalizes a caught `unknown` — JavaScript lets you throw a
+string, and everything downstream assumes an `Error`.
+
+**Return a `Result` for an outcome the caller should branch on**, from
+`@repo/utils/result`; throw for a broken assumption. "This email is taken" is a
+`Result`; "Postgres is unreachable" is a throw. Getting this backwards is the
+usual mistake: the first modelled as a throw disappears into a 500 handler, and
+the second modelled as a `Result` makes every caller carry a branch it can do
+nothing about.
+
+`tryResult` and `tryAsyncResult` wrap throwing code. They are separate functions
+because `tryResult` does not await: handing it an async callback would let the
+rejection escape while the caller saw `{ ok: true }`, so doing that is a compile
+error pointing at the other one.
+
+**Log with `@repo/logger`, never `console`.** `suspicious/noConsole` is an error,
+with the generator templates and `scripts/` the only exceptions.
+
+```ts
+const log = childLogger({ worker: QUEUE_NAMES.email });
+log.info({ jobId, durationMs }, "Job completed");
+log.error({ jobId, err: error }, "Job failed");
+```
+
+Structured fields, not interpolated strings — the first is filterable, the
+second is a haystack. Errors go on `err`, which is where the serializer looks;
+it keeps `context` and the whole `cause` chain, both of which pino's default
+serializer drops.
+
+The logger is **server-side only**. Importing it into a client component pulls
+pino into the browser bundle. Its redaction list is a backstop for a fixed set
+of paths, not a licence — do not pass a request body, a header bag or an env
+object to it.
 
 ## Background jobs
 
@@ -178,7 +280,11 @@ the worked example.
 
 ## File storage
 
-`@repo/storage` fronts any S3-compatible bucket — MinIO locally, S3/R2/Spaces in
+`@repo/storage` is the only place allowed to import `@aws-sdk/*`; a route that
+reaches for the SDK directly bypasses `isOwnedBy`, so `noRestrictedImports`
+makes that a build failure rather than a review comment.
+
+It fronts any S3-compatible bucket — MinIO locally, S3/R2/Spaces in
 production. Swapping providers is an env change, not a code change.
 
 The upload flow is **presigned**:
@@ -207,6 +313,12 @@ ownership, so:
 `packages/infra/storage/src/keys.ts` carries that weight and has the most
 thorough unit test in the repo. Treat changes to it as security changes.
 
+The client sets `requestChecksumCalculation: "WHEN_REQUIRED"` whenever
+`STORAGE_ENDPOINT` is not AWS. Recent AWS SDK versions attach a trailing CRC32
+checksum to every upload, which real S3 accepts and MinIO rejects with an error
+that says nothing about checksums. Scoped to a custom endpoint so a deployment
+against real S3 keeps the stricter default.
+
 Object deletion is asynchronous: the API enqueues `delete-file` and
 `apps/workers` performs it, because bucket deletes are slow and fail
 independently of the request. `deleteObject` is idempotent by contract —
@@ -227,10 +339,16 @@ reads from there, so every app owns a `.env.example`:
 
 The ownership rule:
 
-- **Integration packages own their variables.** `@repo/db` owns `DATABASE_URL`,
-  `@repo/auth` owns the `BETTER_AUTH_*` pair, `@repo/queues` owns `REDIS_URL`,
-  `@repo/storage` owns the `STORAGE_*` set. Each declares them in `src/env.ts`
-  with `createEnv` and exposes them through a `"./env"` subpath export.
+- **Integration packages own their variables.** `@repo/db` owns `DATABASE_URL`
+  and the `DATABASE_*` pool settings, `@repo/auth` owns the `BETTER_AUTH_*` pair,
+  `@repo/queues` owns `REDIS_URL` and `QUEUE_PREFIX`, `@repo/storage` owns the
+  `STORAGE_*` set, `@repo/logger` owns `LOG_LEVEL`. Each declares them in
+  `src/env.ts` with `createEnv` and exposes them through a `"./env"` subpath.
+- **`NODE_ENV` is declared once**, in `baseEnv` (`@repo/env/base`), which every
+  app extends. It used to be redeclared identically in all three apps. It sits
+  in its own subpath so that importing `shouldSkipEnvValidation` — which every
+  `src/env.ts` in the repo does — stays free of `createEnv`'s import-time
+  validation.
 - **Apps compose** with `extends: [...]` and declare only what they alone use.
 - **Validation is forced at boot** by importing `env` from the process
   entrypoint: `src/index.ts` for api and workers, `instrumentation.ts` for web
@@ -238,12 +356,18 @@ The ownership rule:
 
 `shouldSkipEnvValidation()` from `@repo/env` skips validation when
 `SKIP_ENV_VALIDATION=1` or when `npm_lifecycle_event` is one of a small
-allowlist (lint, typecheck, test, format, knip, gen:schema). `db:generate`,
+allowlist (format, lint, typecheck, knip, gen:schema). `db:generate`,
 `db:migrate`, `db:push` and `build` are deliberately **not** on it — those need
 real values, and a named validation error beats a connection error.
 
 **The standing rule:** a new variable for an integration goes into that package's
 `src/env.ts` *and* every consuming app's `.env.example`, in the same commit.
+
+**Never read `process.env` outside a `src/env.ts`.** `style/noProcessEnv` is an
+error. The exceptions, and the only ones, are the `env.ts` files themselves,
+`drizzle.config.ts`, the test setups, the generator, and the `testing/*`
+provisioning modules — which exist precisely to set env vars before anything
+parses them.
 
 Client variables are a special case. Next inlines `NEXT_PUBLIC_*` at build time
 and can only do so from a literal `process.env.NEXT_PUBLIC_X` reference, which is
@@ -257,18 +381,57 @@ one requires a rebuild, not a restart.
 | Layer | Location | Script | Talks to |
 |---|---|---|---|
 | Unit | `src/**/__tests__/*.test.ts` | `bun test src` | nothing |
-| Integration | `tests/integration/*.test.ts` | `bun test tests/integration` | real Postgres / Redis / MinIO |
+| Integration | `tests/integration/*.test.ts` | `bun test --preload ./test-setup.integration.ts tests/integration` | the test stack in `docker-compose.test.yml` |
 
 The two directories **must stay disjoint**: `bun test <arg>` filters by path
 substring, so an integration test under `src/` would be swept into the unit run.
 
 Each workspace with tests has a `bunfig.toml` preloading `test-setup.ts`, which
-sets `SKIP_ENV_VALIDATION=1` and supplies local docker defaults with `??=`. That
-is why a fresh clone can run the whole suite with no env files, and why
-`cd apps/api && bun test src` works standalone.
+supplies local docker defaults with `??=`. That is why a fresh clone can run the
+whole suite with no env files, and why `cd apps/api && bun test src` works
+standalone.
 
 **Do not run `bun test` from the repo root.** No bunfig applies there, and it
 would sweep the integration suites into a run with no docker guarantee.
+
+### Every integration run gets its own everything
+
+`test:integration` adds a second preload, `test-setup.integration.ts`, which is
+wired with `--preload` rather than `bunfig.toml` so that `bun test src` still
+needs no docker at all. It points the run at the **test** stack and provisions
+the external state it needs:
+
+| What | From | Isolation |
+|---|---|---|
+| Postgres | `@repo/db/testing/database` | a database cloned from a migrated template, dropped at the end |
+| Bucket | `@repo/storage/testing/bucket` | a bucket of its own, emptied and removed at the end |
+| Redis | `@repo/queues/testing/prefix` | a BullMQ key prefix of its own, unlinked at the end |
+
+The database trick is worth understanding. Migrations are applied **once** into
+a template database named after a fingerprint of `migrations/`, and each run
+clones it: `CREATE DATABASE ... TEMPLATE` is a file copy inside Postgres, so a
+clone is tens of milliseconds, and the template is rebuilt only when a migration
+changes, because that changes its name.
+
+Three consequences:
+
+- **Integration suites run in parallel.** There is no `--concurrency=1` and
+  nothing shared to race over. Do not add the flag back; fix the isolation
+  instead.
+- **Suites need no run-scoped ids and no hand-written cleanup.** The existing
+  suites still carry some from before; new ones should not add more.
+- **Queue names stay real.** A test cannot rename a queue — the name is baked
+  into Redis keys — so isolation is on the prefix, which is the seam BullMQ
+  provides for exactly this.
+
+A `testing/*` module must **never** import its own package's `env.ts` or
+`client.ts`. Those validate env and open connections at import time, which
+captures the old value before the provisioning has pointed it anywhere new. Each
+one builds a throwaway client from `process.env` instead, and that is why
+`noProcessEnv` is switched off for those paths and nowhere else.
+
+Logs during an integration run are `warn` and above. `TEST_LOG_LEVEL=info`
+turns the request and job lines back on when a failure needs them.
 
 Rules for integration tests:
 
@@ -281,26 +444,24 @@ Rules for integration tests:
   for a suite in one `tests/integration/helpers/stubs.ts` imported for its side
   effect — it is process-wide and shared by every file in a run, so per-file
   registration is last-writer-wins.
-- **Run-scoped ids**: open with `const RUN = Date.now().toString(36)` and derive
-  every unique value from it. Clean up in **both** `beforeAll` and `afterAll` —
-  an interrupted run leaves state the next run must not inherit.
-- **FK delete order**: `public.users` before `user_auth.users`. The FK is
-  `ON DELETE RESTRICT` and deleting the other way fails and leaves the run dirty.
-- **Bucket objects are never cleaned up by anything else.** Unlike a database,
-  nothing truncates a bucket between runs. Delete what you created.
-- **Integration tests run serially** (`turbo run test:integration --concurrency=1`).
-  They mutate shared external state — the same Redis queues and the same bucket —
-  so running the workspaces in parallel is inherently racy. Do not drop the flag.
-- **Wait for a specific job, not the next `completed` event.** Queues are shared
-  across suites, so `worker.once("completed")` can be resolved by somebody else's
-  job. Match on the job id you enqueued (see
+- **Do not reintroduce run-scoped ids or hand-written cleanup.** The run owns its
+  database, bucket and queue prefix, and all three are torn down for it. Some
+  existing suites still carry a `const RUN = Date.now().toString(36)` from before
+  that was true; leave them, but write new suites plainly.
+- **FK delete order**, where a suite does delete rows: `public.users` before
+  `user_auth.users`. The FK is `ON DELETE RESTRICT` and deleting the other way
+  fails and leaves the run dirty.
+- **Wait for a specific job, not the next `completed` event.** Isolation means
+  nobody else's job can resolve it now, but a suite that enqueues two jobs can
+  still resolve on the wrong one. Match on the job id you enqueued (see
   `apps/workers/tests/integration/file-cleanup-worker.test.ts`).
-- **A suite that enqueues without running a worker must obliterate its queue**,
-  or the job lingers in Redis and the workers suite picks it up later.
+- **A suite that needs serial execution has an isolation bug.** Find the shared
+  state and give the run its own, the way the three provisioning helpers do.
+  Do not reach for `--concurrency=1`.
 
-**RLS caveat:** the local connection is the `postgres` superuser *and* the table
-owner, so `users_all_own` is bypassed entirely and integration tests do not
-exercise it. A green suite is not evidence that RLS works.
+**RLS caveat:** the connection is the `postgres` superuser *and* the table owner,
+so `users_all_own` is bypassed entirely and integration tests do not exercise it.
+A green suite is not evidence that RLS works.
 
 Component tests for `packages/ui` are deliberately absent — it is a theme
 layer, not a component library, so there is nothing there to assert that isn't
@@ -385,15 +546,19 @@ Astryx is in **beta (0.7.x)**. On a version bump, run
 
 ```sh
 bun run format      # applies fixes; do this first
-bun run ci          # biome + typecheck + unit tests
+bun run ci          # biome + sherif + typecheck + unit tests
 ```
 
 Before shipping:
 
 ```sh
-bun run db:up
-bun run ci:full     # adds knip, build, migrate, and integration tests
+bun run ci:full     # adds knip, build, and integration tests
 ```
+
+`ci:full` brings the test stack up itself (`test-infra:up --wait`), so it needs
+docker running but no other preparation. It does **not** touch the dev stack or
+apply migrations to it — the integration suites migrate their own template
+database.
 
 - If you touched the schema: `bun run --filter @repo/db db:generate` and commit
   the generated SQL **and** the snapshot.
@@ -401,10 +566,30 @@ bun run ci:full     # adds knip, build, migrate, and integration tests
   change. A passing typecheck is not feature verification.
 - `ci:full` presupposes the four `.env` files exist, because `next build`
   validates env. That is intended — do not "fix" it by adding `build` to the
-  skip allowlist.
+  skip allowlist. CI copies each `.env.example` over instead.
 
 Husky runs `format:check` on pre-commit and the full `bun run ci` on pre-push.
 **Do not bypass either with `--no-verify`.**
+
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request, on pushes to `main`, and
+in a merge group. Three jobs:
+
+- **check** — `bun run ci` then `bun run knip`. No services, so a formatting
+  mistake fails in under a minute rather than after docker has come up.
+- **integration** — brings up `docker-compose.test.yml` with the same
+  `bun run test-infra:up` a developer runs, then `bun run test:integration`.
+  It is the same compose file on purpose: GitHub `services:` blocks cannot take
+  a `command`, which MinIO needs, and a second copy of the stack in workflow
+  YAML is a copy that drifts.
+- **build** — copies each `.env.example` to `.env` and runs `bun run build`,
+  because `next build` validates env.
+
+`.github/actions/setup` reads the Bun version out of `packageManager` rather
+than pinning it a second time, caches `~/.bun/install/cache` against `bun.lock`,
+and installs with `--frozen-lockfile` so a lockfile someone forgot to commit
+fails instead of silently resolving.
 
 ## Things to avoid
 
@@ -415,7 +600,14 @@ Husky runs `format:check` on pre-commit and the full `bun run ci` on pre-push.
 - Hand-editing the generated Astryx block at the bottom of this file.
 - `npm install` or `pnpm install`.
 - Reading `process.env` directly outside a `src/env.ts`.
-- Importing `@repo/db/client` from an app — use `@repo/db/operations/*`.
+- Importing `@repo/db/client` from an app — use `@repo/db/operations/*`, and
+  `@repo/db/transaction` to compose them.
+- Importing `@aws-sdk/*` outside `@repo/storage`.
+- `console.log` — use `@repo/logger`.
+- Adding a per-package `biome.json` or a per-package `lint` script back.
+- Adding `--concurrency=1` to `test:integration`.
+- Pointing an integration test at the dev stack (5430 / 6379 / 9000) instead of
+  the test stack (54322 / 63792 / 59002).
 - Hand-editing `packages/infra/db/src/schema/user-auth.ts`.
 - Accepting a storage key from a request without `isOwnedBy`.
 - Committing a `.env`.
