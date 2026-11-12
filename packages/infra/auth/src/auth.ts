@@ -1,7 +1,8 @@
-import { db, schema } from "@repo/db/client";
-import { createUser } from "@repo/db/operations/users";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+
+import { db, schema } from "@repo/db/client";
+import { createUser } from "@repo/db/operations/users";
 
 import { authEnv as env } from "./env";
 

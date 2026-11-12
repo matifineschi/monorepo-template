@@ -18,7 +18,10 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 				message: "Package location:",
 				default: "packages",
 				choices: [
-					{ name: "packages/<name> (top-level workspace package)", value: "packages" },
+					{
+						name: "packages/<name> (top-level workspace package)",
+						value: "packages",
+					},
 					{
 						name: "packages/infra/<name> (owns a connection to an external system)",
 						value: "packages/infra",
@@ -53,7 +56,9 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 			const { name, pathPrefix, needsEnv, turbo } = data as PackageGenData;
 			const root = turbo.paths.root;
 			const dir = `${root}/${pathPrefix}/${name}`;
-			const camelName = name.replace(/-([a-z0-9])/g, (_, char: string) => char.toUpperCase());
+			const camelName = name.replace(/-([a-z0-9])/g, (_, char: string) =>
+				char.toUpperCase(),
+			);
 
 			const actions: PlopTypes.ActionType[] = [
 				{
@@ -65,11 +70,6 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 					type: "add",
 					path: `${dir}/tsconfig.json`,
 					templateFile: "templates/tsconfig.json.hbs",
-				},
-				{
-					type: "add",
-					path: `${dir}/biome.json`,
-					templateFile: "templates/biome.json.hbs",
 				},
 				{
 					type: "add",

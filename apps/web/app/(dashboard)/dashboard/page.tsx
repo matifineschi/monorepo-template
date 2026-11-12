@@ -1,7 +1,9 @@
 import { VStack } from "@astryxdesign/core/Stack";
 import { Heading, Text } from "@astryxdesign/core/Text";
-import { auth } from "@repo/auth";
 import { headers } from "next/headers";
+
+import { auth } from "@repo/auth";
+
 import { DashboardOverview } from "../_components/dashboard-overview";
 
 function getGreeting(): string {

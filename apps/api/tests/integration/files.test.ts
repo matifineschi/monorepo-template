@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+
 import {
 	deleteAuthUserById,
 	getAuthUserByEmail,
@@ -160,10 +161,13 @@ describe("upload flow", () => {
 			body: "delete me",
 		});
 
-		const response = await app.request(`/files?key=${encodeURIComponent(key)}`, {
-			method: "DELETE",
-			headers: { cookie: owner.cookie },
-		});
+		const response = await app.request(
+			`/files?key=${encodeURIComponent(key)}`,
+			{
+				method: "DELETE",
+				headers: { cookie: owner.cookie },
+			},
+		);
 
 		// 202: the object is removed asynchronously by apps/workers.
 		expect(response.status).toBe(202);

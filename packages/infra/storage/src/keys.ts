@@ -39,7 +39,9 @@ const UPLOAD_ROOT = "uploads";
  */
 export function userPrefix(userId: string): string {
 	if (!isSafeSegment(userId)) {
-		throw new Error("Refusing to build a storage prefix from an unsafe user id");
+		throw new Error(
+			"Refusing to build a storage prefix from an unsafe user id",
+		);
 	}
 	return `${UPLOAD_ROOT}/${userId}/`;
 }

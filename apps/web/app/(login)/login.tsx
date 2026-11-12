@@ -9,6 +9,7 @@ import { Heading, Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { useSearchParams } from "next/navigation";
 import { useActionState, useState } from "react";
+
 import { BrandMark } from "../_components/brand-mark";
 import type { LoginActionState } from "./actions";
 import { signIn, signUp } from "./actions";
@@ -120,7 +121,9 @@ export function Login({ mode = "signin" }: { mode?: "signin" | "signup" }) {
 						{isSignIn ? "New to our platform?" : "Already have an account?"}
 					</Text>
 					<Button
-						label={isSignIn ? "Create an account" : "Sign in to existing account"}
+						label={
+							isSignIn ? "Create an account" : "Sign in to existing account"
+						}
 						variant="secondary"
 						href={alternateHref}
 						width="100%"

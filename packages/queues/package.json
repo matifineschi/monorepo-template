@@ -16,7 +16,6 @@
 		}
 	},
 	"scripts": {
-		"lint": "biome check",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test src",
 		"test:integration": "bun test tests/integration"
@@ -29,7 +28,6 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@repo/biome-config": "workspace:*",
 		"@repo/typescript-config": "workspace:*",
 		"@types/node": "catalog:",
 		"typescript": "catalog:"

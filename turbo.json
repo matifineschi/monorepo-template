@@ -19,9 +19,6 @@
 				"STORAGE_*"
 			]
 		},
-		"lint": {
-			"dependsOn": ["^lint"]
-		},
 		"typecheck": {
 			"dependsOn": ["^typecheck"]
 		},

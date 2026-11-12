@@ -1,6 +1,8 @@
-import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+
+import { auth } from "@repo/auth";
+
 import { DashboardShell } from "./_components/dashboard-shell";
 
 export default async function DashboardLayout({

@@ -1,6 +1,7 @@
+import type { Queue } from "bullmq";
+
 import type { DeleteFileJob } from "@repo/queues";
 import { createFileQueue } from "@repo/queues";
-import type { Queue } from "bullmq";
 
 /**
  * Lazy singletons. Constructing a Queue opens a Redis connection, so building

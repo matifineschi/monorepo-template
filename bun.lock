@@ -31,7 +31,6 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@repo/biome-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "catalog:",
         "typescript": "catalog:",
@@ -56,7 +55,6 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@repo/biome-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "catalog:",
         "@types/react": "catalog:",
@@ -76,15 +74,10 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@repo/biome-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "catalog:",
         "typescript": "catalog:",
       },
-    },
-    "packages/biome-config": {
-      "name": "@repo/biome-config",
-      "version": "0.0.0",
     },
     "packages/env": {
       "name": "@repo/env",
@@ -93,7 +86,6 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@repo/biome-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "catalog:",
         "typescript": "catalog:",
@@ -109,7 +101,6 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@repo/biome-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "catalog:",
         "typescript": "catalog:",
@@ -125,7 +116,6 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@repo/biome-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "catalog:",
         "drizzle-kit": "^0.31.5",
@@ -143,7 +133,6 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@repo/biome-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "catalog:",
         "typescript": "catalog:",
@@ -160,7 +149,6 @@
         "zod": "catalog:",
       },
       "devDependencies": {
-        "@repo/biome-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "catalog:",
         "typescript": "catalog:",
@@ -178,7 +166,6 @@
         "@stylexjs/stylex": "catalog:",
       },
       "devDependencies": {
-        "@repo/biome-config": "*",
         "@repo/typescript-config": "*",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
@@ -660,8 +647,6 @@
     "@oxc-resolver/binding-win32-x64-msvc": ["@oxc-resolver/binding-win32-x64-msvc@11.19.1", "", { "os": "win32", "cpu": "x64" }, "sha512-6hIU3RQu45B+VNTY4Ru8ppFwjVS/S5qwYyGhBotmjxfEKk41I2DlGtRfGJndZ5+6lneE2pwloqunlOyZuX/XAw=="],
 
     "@repo/auth": ["@repo/auth@workspace:packages/infra/auth"],
-
-    "@repo/biome-config": ["@repo/biome-config@workspace:packages/biome-config"],
 
     "@repo/db": ["@repo/db@workspace:packages/infra/db"],
 

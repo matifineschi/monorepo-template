@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+
 import { createEmailQueue } from "@repo/queues";
 
 import type { EmailSender } from "../../src/workers/email.worker";

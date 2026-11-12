@@ -49,13 +49,16 @@ describe("shouldSkipEnvValidation", () => {
 	 * and transforms never run, so tests would exercise types production never
 	 * sees (see any workspace's test-setup.ts).
 	 */
-	test.each(["db:generate", "db:migrate", "db:push", "build", "test"])(
-		"does not skip during %s",
-		(event) => {
-			process.env.npm_lifecycle_event = event;
-			expect(shouldSkipEnvValidation()).toBe(false);
-		},
-	);
+	test.each([
+		"db:generate",
+		"db:migrate",
+		"db:push",
+		"build",
+		"test",
+	])("does not skip during %s", (event) => {
+		process.env.npm_lifecycle_event = event;
+		expect(shouldSkipEnvValidation()).toBe(false);
+	});
 
 	test("does not skip with neither signal set", () => {
 		expect(shouldSkipEnvValidation()).toBe(false);
@@ -67,7 +70,7 @@ describe("booleanFlag", () => {
 	 * The whole reason this helper exists: z.coerce.boolean() treats the string
 	 * "false" as true, which silently inverts every opt-out flag.
 	 */
-	test("parses \"false\" as false, unlike z.coerce.boolean()", () => {
+	test('parses "false" as false, unlike z.coerce.boolean()', () => {
 		expect(booleanFlag(true).parse("false")).toBe(false);
 	});
 

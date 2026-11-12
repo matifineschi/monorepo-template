@@ -1,7 +1,9 @@
-import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+
+import { auth } from "@repo/auth";
+
 import { Login } from "../login";
 
 export const dynamic = "force-dynamic";

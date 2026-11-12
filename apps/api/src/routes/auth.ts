@@ -1,5 +1,6 @@
-import { auth } from "@repo/auth";
 import { Hono } from "hono";
+
+import { auth } from "@repo/auth";
 
 export const authRoutes = new Hono();
 

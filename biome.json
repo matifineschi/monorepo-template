@@ -6,16 +6,174 @@
 		"clientKind": "git",
 		"useIgnoreFile": true
 	},
+	"files": {
+		"ignoreUnknown": true,
+		"includes": [
+			"**",
+			"!**/.agents",
+			"!**/.claude",
+			"!**/.next",
+			"!**/.turbo",
+			"!**/build",
+			"!**/dist",
+			"!**/out",
+			"!packages/infra/db/migrations",
+			"!skills-lock.json"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": {
+					"level": "on",
+					"options": {
+						"groups": [
+							":URL:",
+							[":NODE:", ":BUN:"],
+							":BLANK_LINE:",
+							{ "source": [":PACKAGE:", "!@repo/**"] },
+							":BLANK_LINE:",
+							"@repo/**",
+							":BLANK_LINE:",
+							[":ALIAS:", ":PATH:"]
+						]
+					}
+				}
+			}
+		}
+	},
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"nursery": {
+				"noImportCycles": "error"
+			},
+			"performance": {
+				"noReExportAll": "error"
+			},
+			"style": {
+				"noNestedTernary": "error",
+				"noParameterAssign": "error",
+				"noProcessEnv": "error",
+				"noRestrictedImports": {
+					"level": "error",
+					"options": {
+						"paths": {
+							"@repo/db/client": "Apps and packages read the database through @repo/db/operations/*. The drizzle client is internal to @repo/db.",
+							"@aws-sdk/client-s3": "Object storage goes through @repo/storage, which owns the client, the presigned-upload flow and the key-ownership checks.",
+							"@aws-sdk/s3-request-presigner": "Object storage goes through @repo/storage."
+						}
+					}
+				},
+				"noUselessElse": "error",
+				"noYodaExpression": "error",
+				"useAtIndex": "error",
+				"useConsistentArrayType": "error",
+				"useThrowOnlyError": "error"
+			},
+			"suspicious": {
+				"noExplicitAny": "error"
+			}
 		}
 	},
-	"formatter": {
-		"lineWidth": 120,
-		"indentStyle": "tab",
-		"indentWidth": 2,
-		"includes": ["!packages/infra/db/migrations/**", "!./skills-lock.json"]
-	}
+	"overrides": [
+		{
+			"includes": ["packages/infra/auth/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["packages/infra/storage/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["apps/web/**", "packages/ui/**"],
+			"linter": {
+				"domains": {
+					"next": "recommended",
+					"react": "recommended"
+				}
+			}
+		},
+		{
+			"includes": ["**/*.test.ts", "**/*.test.tsx", "**/test-setup*.ts"],
+			"linter": {
+				"domains": {
+					"test": "recommended"
+				},
+				"rules": {
+					"style": {
+						"noProcessEnv": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"**/src/env.ts",
+				"apps/web/env.ts",
+				"packages/env/src/**",
+				"**/drizzle.config.ts"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noProcessEnv": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["turbo/generators/**", "**/scripts/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noProcessEnv": "off"
+					},
+					"suspicious": {
+						"noConsole": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"packages/infra/db/src/testing/**",
+				"packages/infra/storage/src/testing/**",
+				"packages/queues/src/testing/**"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noProcessEnv": "off"
+					},
+					"suspicious": {
+						"noConsole": "off"
+					}
+				}
+			}
+		}
+	]
 }

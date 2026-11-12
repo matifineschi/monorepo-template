@@ -5,11 +5,8 @@ import { Link } from "@astryxdesign/core/Link";
 import { NavIcon } from "@astryxdesign/core/NavIcon";
 import { HStack, VStack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
-import {
-	TopNav,
-	TopNavHeading,
-	TopNavItem,
-} from "@astryxdesign/core/TopNav";
+import { TopNav, TopNavHeading, TopNavItem } from "@astryxdesign/core/TopNav";
+
 import { BrandMark } from "../_components/brand-mark";
 
 const NAV_ITEMS = [
@@ -40,16 +37,22 @@ export default function PublicLayout({
 						/>
 					}
 					startContent={NAV_ITEMS.map((item) => (
-						<TopNavItem
-							key={item.href}
-							label={item.label}
-							href={item.href}
-						/>
+						<TopNavItem key={item.href} label={item.label} href={item.href} />
 					))}
 					endContent={
 						<HStack gap={2} align="center">
-							<Button label="Sign in" variant="ghost" size="sm" href="/sign-in" />
-							<Button label="Get started" variant="primary" size="sm" href="/sign-up" />
+							<Button
+								label="Sign in"
+								variant="ghost"
+								size="sm"
+								href="/sign-in"
+							/>
+							<Button
+								label="Get started"
+								variant="primary"
+								size="sm"
+								href="/sign-up"
+							/>
 						</HStack>
 					}
 				/>

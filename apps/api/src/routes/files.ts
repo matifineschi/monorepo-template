@@ -1,3 +1,6 @@
+import { Hono } from "hono";
+import { z } from "zod";
+
 import { QUEUE_NAMES } from "@repo/queues";
 import {
 	createUploadUrl,
@@ -6,8 +9,7 @@ import {
 	uploadKey,
 	userPrefix,
 } from "@repo/storage";
-import { Hono } from "hono";
-import { z } from "zod";
+
 import { fileQueue } from "../lib/queues";
 import type { AppVariables } from "../lib/types";
 
@@ -53,7 +55,9 @@ filesRoutes.post("/upload-url", async (c) => {
 	const user = c.get("user");
 	if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-	const parsed = uploadUrlSchema.safeParse(await c.req.json().catch(() => null));
+	const parsed = uploadUrlSchema.safeParse(
+		await c.req.json().catch(() => null),
+	);
 	if (!parsed.success) {
 		return c.json(
 			{ error: "Invalid request", issues: z.treeifyError(parsed.error) },
@@ -94,7 +98,8 @@ filesRoutes.delete("/", async (c) => {
 	if (!user) return c.json({ error: "Unauthorized" }, 401);
 
 	const key = c.req.query("key");
-	if (!key) return c.json({ error: "Missing required query parameter: key" }, 400);
+	if (!key)
+		return c.json({ error: "Missing required query parameter: key" }, 400);
 	if (!isOwnedBy(key, user.id)) return c.json({ error: "Forbidden" }, 403);
 
 	await fileQueue().add(QUEUE_NAMES.files, { type: "delete-file", key });
