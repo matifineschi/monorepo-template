@@ -16,7 +16,9 @@ A full-stack TypeScript monorepo boilerplate built with Turborepo, Bun, Next.js,
 - **Auth**: [better-auth](https://www.better-auth.com) (email + password)
 - **File storage**: S3-compatible — [MinIO](https://min.io) locally, any S3 API in production
 - **Env validation**: [@t3-oss/env](https://env.t3.gg) + [Zod](https://zod.dev), validated at boot
-- **Testing**: `bun test` — unit and integration layers
+- **Logging**: [pino](https://getpino.io) — structured, one config, every server process
+- **Testing**: `bun test` — unit, plus integration against an isolated docker stack
+- **CI**: GitHub Actions — lint, typecheck, unit, integration, build
 - **UI**: [Astryx](https://astryx.atmeta.com) — Meta's open source design system (150+ accessible components, token-driven theming, dark mode)
 - **Linting/Formatting**: [Biome](https://biomejs.dev) (replaces ESLint + Prettier)
 - **Language**: TypeScript (strict mode)
@@ -79,8 +81,9 @@ apps/
 packages/
   ui/               Astryx theme layer (globals.css + providers)
   queues/           BullMQ queue definitions and job payload types
-  env/              Env-validation helpers shared by every package
-  biome-config/     Shared Biome lint/format configurations
+  utils/            createError + Result — the shared error model
+  logger/           pino logger used by every server process
+  env/              Env-validation helpers and baseEnv
   typescript-config/ Shared TypeScript configurations
   infra/
     db/             Drizzle ORM — schema, migrations, operations DAL
@@ -94,19 +97,22 @@ packages/
 |---|---|
 | `bun run dev` | Start all apps in dev mode |
 | `bun run build` | Build everything |
-| `bun run lint` | Lint all packages with Biome |
 | `bun run typecheck` | Type-check all packages |
 | `bun run format` | Apply Biome fixes and organize imports |
 | `bun run format:check` | Check formatting and lint without writing |
-| `bun run test` | Run unit tests |
-| `bun run test:integration` | Run integration tests (requires Docker) |
-| `bun run ci` | Everyday gate: format check + typecheck + unit tests |
-| `bun run ci:full` | Ship gate: `ci` + knip + build + migrate + integration tests |
+| `bun run lint:ws` | Check dependency versions across workspaces (sherif) |
+| `bun run test` | Run unit tests — no Docker needed |
+| `bun run test:integration` | Run integration tests (requires the test stack) |
+| `bun run ci` | Everyday gate: format check + sherif + typecheck + unit tests |
+| `bun run ci:full` | Ship gate: `ci` + knip + build + integration tests |
 | `bun run knip` | Find unused code and dependencies |
-| `bun run db:up` | Start the Docker stack |
+| `bun run db:up` | Start the dev Docker stack |
 | `bun run db:wait` | Start it and block until healthy |
 | `bun run db:down` | Stop the containers |
 | `bun run db:reset` | Destroy and recreate the volumes |
+| `bun run test-infra:up` | Start the test Docker stack and wait for health |
+| `bun run test-infra:down` | Stop it and drop its volume |
+| `bun run test-infra:logs` | Last 200 lines from the test stack |
 | `bun run gen:package` | Scaffold a new workspace package |
 
 ## Environment Variables
@@ -118,8 +124,8 @@ and only reads from there.
 | File | Owns |
 |---|---|
 | [apps/web/.env.example](./apps/web/.env.example) | Database, auth, `NEXT_PUBLIC_APP_URL` |
-| [apps/api/.env.example](./apps/api/.env.example) | Database, auth, Redis, storage, CORS, port |
-| [apps/workers/.env.example](./apps/workers/.env.example) | Redis, storage, concurrency |
+| [apps/api/.env.example](./apps/api/.env.example) | Database, auth, Redis, storage, CORS, port, log level |
+| [apps/workers/.env.example](./apps/workers/.env.example) | Redis, storage, concurrency, log level |
 | [packages/infra/db/.env.example](./packages/infra/db/.env.example) | `DATABASE_URL` for drizzle-kit |
 
 Values are validated with Zod at process start, so a missing or malformed
@@ -130,14 +136,25 @@ See [AGENTS.md](./AGENTS.md#environment-variables) for the ownership rules.
 
 ```sh
 bun run test              # unit — no Docker needed
-bun run db:wait           # bring the stack up and wait for health
+bun run test-infra:up     # bring the test stack up and wait for health
 bun run test:integration  # integration — real Postgres, Redis, MinIO
 ```
 
 | Layer | Location | Talks to |
 |---|---|---|
 | Unit | `src/**/__tests__/*.test.ts` | nothing |
-| Integration | `tests/integration/*.test.ts` | real Postgres / Redis / MinIO |
+| Integration | `tests/integration/*.test.ts` | the test stack in `docker-compose.test.yml` |
+
+Integration tests run against a **separate docker stack** on offset ports
+(54322 / 63792 / 59002), so they can drop databases and empty buckets while
+`bun run dev` keeps running against the dev stack.
+
+Each run gets its own database, its own bucket and its own Redis key prefix.
+The database is cloned from a template that the migrations are applied to once
+and keyed by a fingerprint of the `migrations/` folder, so a clone costs
+milliseconds and the template is rebuilt only when a migration changes. Nothing
+is shared between runs, which is why the suites run in parallel and need no
+hand-written cleanup.
 
 Run tests from a workspace or via turbo, not `bun test` at the repo root — the
 per-workspace `bunfig.toml` preload doesn't apply there.
@@ -152,6 +169,30 @@ authorization boundary. Deletion is queued and performed by `apps/workers`.
 Storage is stateless — there is intentionally no `files` table, since not every
 project wants file metadata in Postgres. See
 [packages/infra/storage/README.md](./packages/infra/storage/README.md).
+
+## Errors and Logging
+
+`@repo/utils` holds the error model: `createError(message, { cause, context })`
+for errors with a static message and structured context, and `Result<R, Code>`
+plus `tryResult` / `tryAsyncResult` for outcomes a caller should branch on.
+
+`@repo/logger` is pino with one configuration, used by every server process.
+Log structured fields rather than interpolated strings; `console` is a lint
+error. Errors on the `err` field keep their `context` and their whole `cause`
+chain, both of which pino's default serializer drops.
+
+## Continuous Integration
+
+[.github/workflows/ci.yml](./.github/workflows/ci.yml) runs on every pull
+request, on pushes to `main`, and in a merge group:
+
+| Job | What it runs |
+|---|---|
+| check | `bun run ci`, then `bun run knip` |
+| integration | brings up `docker-compose.test.yml`, then `bun run test:integration` |
+| build | copies each `.env.example` to `.env`, then `bun run build` |
+
+CI uses the same compose file developers use, so the two cannot drift.
 
 ## Database
 
@@ -180,8 +221,9 @@ If pre-commit fails, `bun run format` fixes it.
 bun run gen:package
 ```
 
-Scaffolds the package with its Biome config, tsconfig, test harness, and a
-starter test, and asks whether it needs environment variables.
+Scaffolds the package with its tsconfig, test harness, and a starter test, and
+asks whether it needs environment variables. Linting and formatting are
+repo-wide — there is one Biome config, at the root.
 
 ## Filtering Tasks
 
