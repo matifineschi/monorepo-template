@@ -16,6 +16,7 @@
 				"DATABASE_URL",
 				"LOG_LEVEL",
 				"PORT",
+				"QUEUE_PREFIX",
 				"REDIS_URL",
 				"STORAGE_*"
 			]
@@ -30,10 +31,11 @@
 		"test:integration": {
 			"cache": false,
 			"passThroughEnv": [
-				"DATABASE_URL",
-				"REDIS_URL",
-				"BETTER_AUTH_URL",
 				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"QUEUE_PREFIX",
+				"REDIS_URL",
 				"STORAGE_*"
 			]
 		},
