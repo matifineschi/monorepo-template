@@ -134,6 +134,7 @@
         "@aws-sdk/client-s3": "catalog:",
         "@aws-sdk/s3-request-presigner": "catalog:",
         "@repo/env": "workspace:*",
+        "@repo/utils": "workspace:*",
         "@t3-oss/env-core": "catalog:",
         "zod": "catalog:",
       },

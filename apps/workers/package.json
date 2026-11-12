@@ -9,7 +9,7 @@
 		"start": "bun run dist/index.js",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test src",
-		"test:integration": "bun test tests/integration"
+		"test:integration": "bun test --preload ./test-setup.integration.ts tests/integration"
 	},
 	"dependencies": {
 		"@repo/env": "workspace:*",

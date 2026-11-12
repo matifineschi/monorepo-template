@@ -18,7 +18,8 @@
 				"PORT",
 				"QUEUE_PREFIX",
 				"REDIS_URL",
-				"STORAGE_*"
+				"STORAGE_*",
+				"WORKER_CONCURRENCY"
 			]
 		},
 		"typecheck": {
@@ -34,9 +35,14 @@
 				"BETTER_AUTH_SECRET",
 				"BETTER_AUTH_URL",
 				"DATABASE_*",
+				"LOG_LEVEL",
 				"QUEUE_PREFIX",
 				"REDIS_URL",
-				"STORAGE_*"
+				"STORAGE_*",
+				"TEST_DATABASE_ADMIN_URL",
+				"TEST_LOG_LEVEL",
+				"TEST_REDIS_URL",
+				"TEST_STORAGE_ENDPOINT"
 			]
 		},
 		"clean": {

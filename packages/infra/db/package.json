@@ -6,7 +6,7 @@
 		"clean": "git clean -xdf .cache .turbo dist node_modules",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test src",
-		"test:integration": "bun test tests/integration",
+		"test:integration": "bun test --preload ./test-setup.integration.ts tests/integration",
 		"db:generate": "drizzle-kit generate --config=drizzle.config.ts",
 		"db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
 		"db:push": "drizzle-kit push"
@@ -47,6 +47,11 @@
 			"types": "./src/transaction.ts",
 			"import": "./src/transaction.ts",
 			"default": "./src/transaction.ts"
+		},
+		"./testing/database": {
+			"types": "./src/testing/database.ts",
+			"import": "./src/testing/database.ts",
+			"default": "./src/testing/database.ts"
 		}
 	},
 	"dependencies": {

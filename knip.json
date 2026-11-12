@@ -10,20 +10,37 @@
 			"entry": ["env.ts"]
 		},
 		"apps/api": {
-			"entry": ["src/index.ts", "tests/integration/*.test.ts"]
+			"entry": [
+				"src/index.ts",
+				"tests/integration/*.test.ts",
+				"test-setup.integration.ts"
+			]
 		},
 		"apps/workers": {
-			"entry": ["src/index.ts", "tests/integration/*.test.ts"]
+			"entry": [
+				"src/index.ts",
+				"tests/integration/*.test.ts",
+				"test-setup.integration.ts"
+			]
 		},
 		"packages/queues": {
-			"entry": ["tests/integration/*.test.ts"]
+			"entry": ["tests/integration/*.test.ts", "test-setup.integration.ts"]
 		},
 		"packages/ui": {},
 		"packages/infra/db": {
-			"entry": ["src/operations/*.ts", "tests/integration/*.test.ts"]
+			"entry": [
+				"src/operations/*.ts",
+				"src/testing/*.ts",
+				"tests/integration/*.test.ts",
+				"test-setup.integration.ts"
+			]
 		},
 		"packages/infra/storage": {
-			"entry": ["tests/integration/*.test.ts"]
+			"entry": [
+				"src/testing/*.ts",
+				"tests/integration/*.test.ts",
+				"test-setup.integration.ts"
+			]
 		},
 		"packages/utils": {},
 		"packages/logger": {}

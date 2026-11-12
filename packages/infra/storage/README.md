@@ -10,6 +10,7 @@ src/
   client.ts   lazy S3Client singleton
   keys.ts     key derivation and ownership — the authorization model
   objects.ts  put / get / list / delete / createUploadUrl
+  testing/    per-run test buckets, via @repo/storage/testing/bucket
 ```
 
 This package is the only place in the repo allowed to import `@aws-sdk/*`.
@@ -99,7 +100,7 @@ need `localhost:9000` — if a deployment ever needs both, that is a second
 
 ```sh
 bun run --filter @repo/storage test              # keys.ts — no bucket needed
-bun run db:wait
+bun run test-infra:up
 bun run --filter @repo/storage test:integration  # real MinIO
 ```
 
@@ -108,9 +109,20 @@ purpose: a stub cannot catch a path-style, region, or signing misconfiguration,
 which is the class of bug actually worth catching here. The presigned-URL test
 fetches its own URL with a plain `PUT`, which proves the whole chain at once.
 
-Every test writes under a run-scoped `test-runs/<run>/` prefix and deletes what
-it created. Unlike a database, **nothing ever truncates a bucket** — a leaked
-object stays forever.
+Each run gets a **bucket of its own**. `test:integration` preloads
+`test-setup.integration.ts`, which calls `provisionTestBucket` to create one
+against the MinIO in `docker-compose.test.yml`, point `STORAGE_BUCKET` at it,
+and empty and remove it when the run ends.
+
+That matters more here than for the database. Unlike a database, **nothing ever
+truncates a bucket**: on a shared bucket every object leaked by every failed run
+stays until somebody notices, and two suites listing the same prefix at once see
+each other's objects. A bucket per run is also what lets the integration suites
+run in parallel.
+
+`src/testing/bucket.ts` builds its own client from `process.env` rather than
+importing `./client` or `./env`, both of which capture the parsed env at import
+time and would freeze `STORAGE_BUCKET` at its pre-provision value.
 
 `deleteObject` is idempotent by contract: it swallows `NoSuchKey`. BullMQ
 retries, and a delete that threw on an already-absent object would turn one

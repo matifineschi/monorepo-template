@@ -1,0 +1,71 @@
+# Test-only infrastructure, separate from the dev stack in docker-compose.yml.
+#
+# Two reasons it is a separate file and not a profile:
+#
+#  - Integration tests must never touch dev data. A suite that truncates a table
+#    or empties a bucket is correct behaviour here and destructive there.
+#  - Both stacks can then be up at once, so `bun run dev` keeps working while the
+#    suite runs. The ports are deliberately offset from the dev ones.
+#
+# `name` keeps Compose from treating this as the same project as the dev stack,
+# which would otherwise recreate those containers every time.
+name: monorepo-template-test
+
+services:
+  test-postgres:
+    # Keep the major version in lockstep with the dev stack and production.
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    # Throwaway data, so durability is worth trading for speed. Integration
+    # suites create and drop a database each, and fsync dominates that.
+    command: >
+      postgres
+      -c fsync=off
+      -c synchronous_commit=off
+      -c full_page_writes=off
+      -c max_connections=200
+    ports:
+      - "54322:5432"
+    # A named volume, not tmpfs, on purpose: the migrated template database that
+    # `provisionTestDatabase` clones from survives a restart, so a run only pays
+    # for migrations when a migration actually changed.
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  test-redis:
+    image: redis:7-alpine
+    ports:
+      - "63792:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  # Buckets are created per run by `provisionTestBucket`, so unlike the dev
+  # stack there is no one-shot bucket-creation container here.
+  test-minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "59002:9000"
+      - "59003:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+volumes:
+  test_postgres_data:
