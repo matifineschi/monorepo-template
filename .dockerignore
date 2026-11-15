@@ -1,0 +1,35 @@
+# Everything a build does not need. Keeping this tight is what makes the build
+# context small enough that `docker build` does not spend its first seconds
+# uploading .next and node_modules to the daemon.
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/build
+**/out
+**/.cache
+**/coverage
+
+.git
+.github
+.husky
+.vscode
+.idea
+**/.DS_Store
+
+# Never bake secrets into an image layer. .env.example is wanted; .env is not.
+**/.env
+**/.env.*
+!**/.env.example
+
+docker-compose.yml
+docker-compose.test.yml
+Dockerfile
+**/Dockerfile
+.dockerignore
+
+# Docs and agent instructions: not build inputs.
+**/*.md
+!packages/*/README.md
+.agents
+.claude

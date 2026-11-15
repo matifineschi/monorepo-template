@@ -108,6 +108,16 @@
 			}
 		},
 		{
+			"includes": ["apps/cron/src/lib/exec.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noProcessEnv": "off"
+					}
+				}
+			}
+		},
+		{
 			"includes": ["packages/infra/storage/**"],
 			"linter": {
 				"rules": {
@@ -127,7 +137,12 @@
 			}
 		},
 		{
-			"includes": ["**/*.test.ts", "**/*.test.tsx", "**/test-setup*.ts"],
+			"includes": [
+				"**/*.test.ts",
+				"**/*.test.tsx",
+				"**/test-setup*.ts",
+				"**/__tests__/**"
+			],
 			"linter": {
 				"domains": {
 					"test": "recommended"
@@ -135,6 +150,9 @@
 				"rules": {
 					"style": {
 						"noProcessEnv": "off"
+					},
+					"suspicious": {
+						"noConsole": "off"
 					}
 				}
 			}

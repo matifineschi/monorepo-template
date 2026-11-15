@@ -1,0 +1,29 @@
+{
+	"name": "cron",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "bun build src/main.ts --outdir dist --target bun",
+		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"job": "bun run src/main.ts",
+		"test": "bun test src",
+		"test:integration": "bun test --preload ./test-setup.integration.ts tests/integration",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@repo/db": "workspace:*",
+		"@repo/env": "workspace:*",
+		"@repo/logger": "workspace:*",
+		"@repo/utils": "workspace:*",
+		"@t3-oss/env-core": "catalog:",
+		"postgres": "catalog:",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@repo/storage": "workspace:*",
+		"@repo/typescript-config": "workspace:*",
+		"@types/node": "catalog:",
+		"typescript": "catalog:"
+	}
+}

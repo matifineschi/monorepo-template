@@ -27,6 +27,9 @@
 			"entry": ["src/testing/*.ts", "tests/integration/*.test.ts"]
 		},
 		"packages/utils": {},
-		"packages/logger": {}
+		"packages/logger": {},
+		"apps/cron": {
+			"entry": ["tests/integration/*.test.ts"]
+		}
 	}
 }

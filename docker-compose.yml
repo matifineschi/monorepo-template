@@ -66,20 +66,30 @@ services:
       timeout: 5s
       retries: 5
 
-  # One-shot: creates the bucket on startup, then exits. Idempotent — safe to
+  # One-shot: creates the buckets on startup, then exits. Idempotent — safe to
   # re-run on every `docker compose up`.
   # Same image as `minio` — `mc` is bundled in it. minio/mc is gone from Docker Hub.
+  #
+  # app-backups is versioned. Noncurrent versions expire after 90 days; current
+  # objects do not. See docs/backups.md. `ilm rule remove` fails when the bucket
+  # has no lifecycle yet, which is every fresh bucket, so that one failure is ignored.
   minio-createbucket:
     image: docker.io/pgsty/silo:RELEASE.2026-11-12T00-00-00Z
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin &&
-      mc mb --ignore-existing local/app-uploads &&
-      echo 'bucket app-uploads ready';
-      "
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        mc alias set local http://minio:9000 minioadmin minioadmin
+        mc mb --ignore-existing local/app-uploads
+        mc mb --ignore-existing local/app-backups
+        mc version enable local/app-backups
+        mc ilm rule remove --all --force local/app-backups || true
+        mc ilm rule add --noncurrent-expire-days 90 --expire-delete-marker local/app-backups
+        echo 'buckets app-uploads and app-backups ready'
 
 volumes:
   postgres_data:
