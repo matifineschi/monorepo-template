@@ -33,6 +33,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Local safety copies taken before a big refactor. Keep them if you like —
+# just never commit one: a tarball of the tree is the easiest way to push
+# something to a public repo that was never meant to be there.
+.backup-*/
+.backup-*.tar.gz
+.backup-*.tgz
+.backup-*.zip
+
 # Misc
 .DS_Store
 *.pem
