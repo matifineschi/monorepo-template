@@ -10,6 +10,12 @@
 			"outputs": [".next/**", "!.next/cache/**", "dist/**"],
 			"env": [
 				"NEXT_PUBLIC_*",
+				"BACKUP_*",
+				"BUCKET_BACKUP_*",
+				"POSTGRES_*",
+				"RESTORE_CHECK_*",
+				"SOURCE_S3_*",
+				"WORK_DIR",
 				"BETTER_AUTH_SECRET",
 				"BETTER_AUTH_URL",
 				"CORS_ORIGIN",
@@ -32,6 +38,12 @@
 		"test:integration": {
 			"cache": false,
 			"passThroughEnv": [
+				"BACKUP_*",
+				"BUCKET_BACKUP_*",
+				"POSTGRES_*",
+				"RESTORE_CHECK_*",
+				"SOURCE_S3_*",
+				"WORK_DIR",
 				"BETTER_AUTH_SECRET",
 				"BETTER_AUTH_URL",
 				"DATABASE_*",

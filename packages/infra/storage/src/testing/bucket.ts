@@ -110,7 +110,15 @@ export type ProvisionedBucket = {
  * process.on("exit", () => void bucket.drop());
  */
 export async function provisionTestBucket(
-	options: { label?: string } = {},
+	options: {
+		label?: string;
+		/**
+		 * Which variable to point at the new bucket. Defaults to the application's
+		 * `STORAGE_BUCKET`; apps/cron passes `BACKUP_S3_BUCKET`, because backups
+		 * deliberately live in a different bucket with different credentials.
+		 */
+		envVar?: string;
+	} = {},
 ): Promise<ProvisionedBucket> {
 	const label = slug(options.label ?? "run", 16) || "run";
 	const name = `${BUCKET_PREFIX}${label}-${Date.now().toString(36)}-${Math.random()
@@ -125,7 +133,7 @@ export async function provisionTestBucket(
 
 	const client = testClient();
 	await client.send(new CreateBucketCommand({ Bucket: name }));
-	process.env.STORAGE_BUCKET = name;
+	process.env[options.envVar ?? "STORAGE_BUCKET"] = name;
 
 	let dropped = false;
 

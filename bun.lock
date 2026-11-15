@@ -39,6 +39,25 @@
         "typescript": "catalog:",
       },
     },
+    "apps/cron": {
+      "name": "cron",
+      "version": "0.1.0",
+      "dependencies": {
+        "@repo/db": "workspace:*",
+        "@repo/env": "workspace:*",
+        "@repo/logger": "workspace:*",
+        "@repo/utils": "workspace:*",
+        "@t3-oss/env-core": "catalog:",
+        "postgres": "catalog:",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@repo/storage": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "apps/web": {
       "name": "web",
       "version": "0.1.0",
@@ -836,6 +855,8 @@
     "commondir": ["commondir@1.0.1", "", {}, "sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg=="],
 
     "convert-source-map": ["convert-source-map@2.0.0", "", {}, "sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg=="],
+
+    "cron": ["cron@workspace:apps/cron"],
 
     "cron-parser": ["cron-parser@5.10.4", "", { "dependencies": { "luxon": "^3.7.2" } }, "sha512-TagNqYzoV/C7Ty7VAQjrQg+57WsEOuQEUh0tWT5Dc+l/GOuoAdWVIzFU0CqYdQswqdjUalrdmOvaMtQhErYZTA=="],
 
