@@ -118,7 +118,7 @@
         "@repo/utils": "workspace:*",
         "@t3-oss/env-core": "catalog:",
         "drizzle-orm": "^0.45.4",
-        "postgres": "^4.1.1",
+        "postgres": "catalog:",
         "zod": "catalog:",
       },
       "devDependencies": {
@@ -228,6 +228,7 @@
     "next": "16.4.6",
     "pino": "^10.4.0",
     "pino-pretty": "^13.2.0",
+    "postgres": "^4.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "turbo": "^2.11.11",
