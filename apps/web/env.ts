@@ -3,8 +3,10 @@ import { z } from "zod";
 
 import { authEnv } from "@repo/auth/env";
 import { databaseEnv } from "@repo/db/env";
+import { emailEnv } from "@repo/email/env";
 import { shouldSkipEnvValidation } from "@repo/env";
 import { baseEnv } from "@repo/env/base";
+import { queuesEnv } from "@repo/queues/env";
 
 /**
  * Client env is separate because Next inlines NEXT_PUBLIC_* at build time, and
@@ -31,7 +33,7 @@ export const clientEnv = createEnv({
  */
 export const env = createEnv({
 	emptyStringAsUndefined: true,
-	extends: [baseEnv, clientEnv, authEnv, databaseEnv],
+	extends: [baseEnv, clientEnv, authEnv, databaseEnv, emailEnv, queuesEnv],
 	experimental__runtimeEnv: process.env,
 	skipValidation: shouldSkipEnvValidation(),
 });

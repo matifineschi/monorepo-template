@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { $ZodFlattenedError } from "zod/v4/core";
 
-import { auth } from "@repo/auth";
+import type { SignInCode, SignUpCode } from "@repo/features/auth";
+import { signInWithEmail, signUpWithEmail } from "@repo/features/auth";
+import { displayNameFromEmail } from "@repo/features/users";
 
 const loginSchema = z.object({
 	email: z.string().trim().email("Enter a valid email address"),
@@ -157,10 +159,14 @@ function getSetCookieHeaders(responseHeaders: Headers): string[] {
 	return fallbackSetCookie ? [fallbackSetCookie] : [];
 }
 
-async function forwardAuthCookies(response: Response): Promise<void> {
+/**
+ * The session cookie better-auth minted is in the feature's response headers;
+ * a server action has to copy it onto Next's own response explicitly.
+ */
+async function forwardAuthCookies(responseHeaders: Headers): Promise<void> {
 	const cookieStore = await cookies();
 
-	for (const header of getSetCookieHeaders(response.headers)) {
+	for (const header of getSetCookieHeaders(responseHeaders)) {
 		const parsedCookie = parseSetCookieHeader(header);
 		if (!parsedCookie) {
 			continue;
@@ -179,23 +185,12 @@ async function forwardAuthCookies(response: Response): Promise<void> {
 	}
 }
 
-async function parseErrorMessage(
-	response: Response,
-	defaultMessage: string,
-): Promise<string> {
-	try {
-		const body = (await response.json()) as
-			| { error?: { message?: string }; message?: string }
-			| undefined;
-		return body?.error?.message ?? body?.message ?? defaultMessage;
-	} catch {
-		return defaultMessage;
-	}
-}
-
-function getNameFromEmail(email: string): string {
-	return email.split("@")[0] || "User";
-}
+const FAILURE_MESSAGES: Record<SignInCode | SignUpCode, string> = {
+	"invalid-credentials": "Incorrect email or password.",
+	"email-taken": "An account with this email already exists. Sign in instead.",
+	"invalid-password": "Password must be between 8 and 100 characters.",
+	failed: "Something went wrong. Please try again.",
+};
 
 async function authenticateWithEmailPassword(
 	mode: "signin" | "signup",
@@ -214,39 +209,20 @@ async function authenticateWithEmailPassword(
 
 	const requestHeaders = await headers();
 	const { data } = parsedForm;
-	const response =
+	const credentials = { email: data.email, password: data.password };
+	const result =
 		mode === "signin"
-			? await auth.api.signInEmail({
-					asResponse: true,
-					body: {
-						email: data.email,
-						password: data.password,
-					},
-					headers: requestHeaders,
-				})
-			: await auth.api.signUpEmail({
-					asResponse: true,
-					body: {
-						email: data.email,
-						name: getNameFromEmail(data.email),
-						password: data.password,
-					},
-					headers: requestHeaders,
-				});
+			? await signInWithEmail(credentials, requestHeaders)
+			: await signUpWithEmail(
+					{ ...credentials, name: displayNameFromEmail(data.email) },
+					requestHeaders,
+				);
 
-	if (!response.ok) {
-		return {
-			email: data.email,
-			error: await parseErrorMessage(
-				response,
-				mode === "signin"
-					? "Unable to sign in. Please check your credentials."
-					: "Unable to create your account. Please try again.",
-			),
-		};
+	if (!result.ok) {
+		return { email: data.email, error: FAILURE_MESSAGES[result.code] };
 	}
 
-	await forwardAuthCookies(response);
+	await forwardAuthCookies(result.value.headers);
 
 	redirect(getPostAuthRedirect(data));
 }

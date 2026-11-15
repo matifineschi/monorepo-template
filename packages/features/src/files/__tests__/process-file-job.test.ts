@@ -1,16 +1,16 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ObjectDeleter } from "../file-cleanup.worker";
-import { processFileCleanupJob } from "../file-cleanup.worker";
+import type { ObjectDeleter } from "..";
+import { processFileJob } from "..";
 
-describe("processFileCleanupJob", () => {
+describe("processFileJob", () => {
 	test("deletes the object named in the job", async () => {
 		const deleted: string[] = [];
 		const remove: ObjectDeleter = async (key) => {
 			deleted.push(key);
 		};
 
-		await processFileCleanupJob(
+		await processFileJob(
 			{ type: "delete-file", key: "uploads/user-1/a.png" },
 			remove,
 		);
@@ -25,7 +25,7 @@ describe("processFileCleanupJob", () => {
 	 */
 	test("succeeds when the object is already gone", async () => {
 		await expect(
-			processFileCleanupJob(
+			processFileJob(
 				{ type: "delete-file", key: "uploads/user-1/missing.png" },
 				async () => {
 					/* deleteObject swallows NoSuchKey */
@@ -36,7 +36,7 @@ describe("processFileCleanupJob", () => {
 
 	test("propagates a real storage failure so BullMQ can retry", async () => {
 		await expect(
-			processFileCleanupJob(
+			processFileJob(
 				{ type: "delete-file", key: "uploads/user-1/a.png" },
 				async () => {
 					throw new Error("connection reset");
@@ -49,7 +49,7 @@ describe("processFileCleanupJob", () => {
 		const deleted: string[] = [];
 
 		await expect(
-			processFileCleanupJob({ type: "nope" } as never, async (key) => {
+			processFileJob({ type: "nope" } as never, async (key) => {
 				deleted.push(key);
 			}),
 		).rejects.toThrow(/Unknown file job type/);

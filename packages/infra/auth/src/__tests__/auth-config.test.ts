@@ -1,12 +1,14 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
-import { auth } from "../auth";
+import { createAuth } from "../auth";
 
 /**
- * Stays a unit test: importing `auth` pulls in @repo/db/client, but `postgres()`
+ * Stays a unit test: `createAuth` pulls in @repo/db/client, but `postgres()`
  * is lazy, so no connection is opened here.
  */
-describe("auth config", () => {
+describe("createAuth", () => {
+	const auth = createAuth();
+
 	test("email + password sign-in is enabled", () => {
 		expect(auth.options.emailAndPassword?.enabled).toBe(true);
 	});
@@ -21,5 +23,20 @@ describe("auth config", () => {
 
 	test("uses the plural drizzle table names the schema defines", () => {
 		expect(auth.options.database).toBeDefined();
+	});
+
+	test("revokes every session when a password is reset", () => {
+		expect(auth.options.emailAndPassword?.revokeSessionsOnPasswordReset).toBe(
+			true,
+		);
+	});
+
+	test("wires the reset-password hook it is given", () => {
+		const sendResetPassword = mock(async () => {});
+		const withHook = createAuth({ sendResetPassword });
+
+		expect(withHook.options.emailAndPassword?.sendResetPassword).toBe(
+			sendResetPassword,
+		);
 	});
 });

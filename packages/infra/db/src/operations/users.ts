@@ -2,10 +2,11 @@ import { eq } from "drizzle-orm";
 
 import { type DbOrTx, db, schema } from "../client";
 
+/** The names are decided by the caller; this layer only stores them. */
 type PublicUserProvisionInput = {
 	id: string;
-	name?: string | null;
-	email?: string | null;
+	firstName: string;
+	lastName: string;
 };
 
 export type PublicUser = {
@@ -14,27 +15,6 @@ export type PublicUser = {
 	lastName: string;
 	mobile: string | null;
 };
-
-/**
- * Exported for testing: this decides what every new user is called, and every
- * branch here is a fallback for a case better-auth can actually produce.
- */
-export function getNameParts(
-	input: Pick<PublicUserProvisionInput, "email" | "name">,
-): {
-	firstName: string;
-	lastName: string;
-} {
-	const trimmedName = input.name?.trim();
-	const fallbackFromEmail = input.email?.split("@")[0]?.trim();
-	const normalized = trimmedName || fallbackFromEmail || "User";
-	const [firstName, ...rest] = normalized.split(/\s+/).filter(Boolean);
-
-	return {
-		firstName: firstName || "User",
-		lastName: rest.join(" ") || "User",
-	};
-}
 
 /**
  * Idempotent: better-auth's user.create.after hook can fire more than once for
@@ -48,14 +28,12 @@ export async function createUser(
 	input: PublicUserProvisionInput,
 	executor: DbOrTx = db,
 ): Promise<{ created: boolean }> {
-	const { firstName, lastName } = getNameParts(input);
-
 	const [createdUser] = await executor
 		.insert(schema.users)
 		.values({
 			id: input.id,
-			firstName,
-			lastName,
+			firstName: input.firstName,
+			lastName: input.lastName,
 		})
 		.onConflictDoNothing({ target: schema.users.id })
 		.returning({

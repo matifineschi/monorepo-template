@@ -1,14 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
-import {
-	deleteAuthUserById,
-	getAuthUserByEmail,
-} from "@repo/db/operations/user-auth";
-import { deleteUserById } from "@repo/db/operations/users";
-import { deleteObject, listObjects } from "@repo/storage";
+import { listUserFiles, processFileJob } from "@repo/features/files";
+import { closeFeatureConnections } from "@repo/features/system";
+import { deleteAccount, findAccountByEmail } from "@repo/features/users";
+import { createEmailQueue, createFileQueue } from "@repo/queues";
 
 import { app } from "../../src/index";
-import { closeQueues, fileQueue } from "../../src/lib/queues";
 
 /**
  * The full upload path end to end: sign up, presign, PUT the real bytes to
@@ -37,7 +34,7 @@ async function signUp(email: string): Promise<Session> {
 		throw new Error(`sign-up failed for ${email}: ${response.status}`);
 	}
 
-	const authUser = await getAuthUserByEmail(email);
+	const authUser = await findAccountByEmail(email);
 
 	return {
 		cookie: response.headers.get("set-cookie") as string,
@@ -46,12 +43,8 @@ async function signUp(email: string): Promise<Session> {
 }
 
 async function removeUser(email: string) {
-	const authUser = await getAuthUserByEmail(email);
-	if (!authUser) return;
-
-	// FK order: public.users before user_auth.users (ON DELETE RESTRICT).
-	await deleteUserById(authUser.id);
-	await deleteAuthUserById(authUser.id);
+	const authUser = await findAccountByEmail(email);
+	if (authUser) await deleteAccount(authUser.id);
 }
 
 beforeAll(async () => {
@@ -63,15 +56,22 @@ beforeAll(async () => {
 afterAll(async () => {
 	for (const session of [owner, other]) {
 		if (!session?.userId) continue;
-		const objects = await listObjects(`uploads/${session.userId}/`);
-		await Promise.all(objects.map((object) => deleteObject(object.key)));
+		const files = await listUserFiles(session.userId);
+		await Promise.all(
+			files.map((file) =>
+				processFileJob({ type: "delete-file", key: file.key }),
+			),
+		);
 	}
 	await Promise.all([removeUser(OWNER_EMAIL), removeUser(OTHER_EMAIL)]);
 
-	// This suite enqueues a real delete-file job and runs no worker, so the job
-	// would otherwise linger in Redis and be picked up by the workers suite.
-	await fileQueue().obliterate({ force: true });
-	await closeQueues();
+	// This suite enqueues real delete-file and welcome-email jobs and runs no
+	// worker, so they would otherwise linger under this run's queue prefix.
+	for (const queue of [createFileQueue(), createEmailQueue()]) {
+		await queue.obliterate({ force: true });
+		await queue.close();
+	}
+	await closeFeatureConnections();
 });
 
 function requestUploadUrl(session: Session, filename: string) {

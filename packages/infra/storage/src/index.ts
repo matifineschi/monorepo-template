@@ -1,6 +1,5 @@
 export { bucket, s3Client } from "./client";
 export { pingBucket } from "./health";
-export { isOwnedBy, uploadKey, userPrefix } from "./keys";
 export type { StoredObject } from "./objects";
 export {
 	createUploadUrl,

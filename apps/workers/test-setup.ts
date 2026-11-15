@@ -9,4 +9,6 @@ process.env.STORAGE_ACCESS_KEY_ID ??= "minioadmin";
 process.env.STORAGE_SECRET_ACCESS_KEY ??= "minioadmin";
 process.env.STORAGE_BUCKET ??= "app-uploads";
 process.env.STORAGE_FORCE_PATH_STYLE ??= "true";
+process.env.EMAIL_TRANSPORT ??= "log";
+process.env.EMAIL_FROM ??= "Acme <onboarding@resend.dev>";
 process.env.LOG_LEVEL ??= "silent";

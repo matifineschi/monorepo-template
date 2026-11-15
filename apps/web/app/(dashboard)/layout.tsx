@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { auth } from "@repo/auth";
+import { getSession } from "@repo/features/auth";
 
 import { DashboardShell } from "./_components/dashboard-shell";
 
@@ -10,9 +10,7 @@ export default async function DashboardLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const session = await auth.api.getSession({
-		headers: await headers(),
-	});
+	const session = await getSession(await headers());
 
 	if (!session) {
 		redirect("/sign-in");

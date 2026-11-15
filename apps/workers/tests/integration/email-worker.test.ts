@@ -1,24 +1,25 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
+import type { Deliver } from "@repo/features/email";
 import { createEmailQueue } from "@repo/queues";
 
-import type { EmailSender } from "../../src/workers/email.worker";
 import { startEmailWorker } from "../../src/workers/email.worker";
 
 /**
  * Producer -> Redis -> consumer, which is the entire point of this app.
- * The email provider is injected rather than mocked at module scope: it's typed,
+ * Delivery is injected rather than mocked at module scope: it's typed,
  * per-test, and there is no process-wide registry to fight over.
  */
 const RUN = Date.now().toString(36);
 
 const queue = createEmailQueue();
-const sent: Parameters<EmailSender>[0][] = [];
+const sent: Parameters<Deliver>[0][] = [];
 
 const worker = startEmailWorker({
 	concurrency: 1,
-	send: async (message) => {
+	deliver: async (message) => {
 		sent.push(message);
+		return { ok: true, value: { id: `test-${sent.length}` } };
 	},
 });
 
@@ -40,13 +41,15 @@ describe("email worker", () => {
 			userId: `user-${RUN}`,
 			email: `worker-${RUN}@example.test`,
 			name: "Ada Lovelace",
+			appUrl: "http://localhost:3000",
 		});
 
 		await waitForJob(job.id as string);
 
 		expect(sent).toHaveLength(1);
 		expect(sent[0]?.to).toBe(`worker-${RUN}@example.test`);
-		expect(sent[0]?.body).toContain("Ada Lovelace");
+		expect(sent[0]?.subject).toBe("Welcome to Acme");
+		expect(sent[0]?.idempotencyKey).toBe(`welcome-user/user-${RUN}`);
 	});
 });
 

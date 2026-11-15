@@ -3,6 +3,8 @@ export type SendWelcomeEmailJob = {
 	userId: string;
 	email: string;
 	name: string;
+	/** Web app origin the email links back to; the producer knows it, the worker doesn't. */
+	appUrl: string;
 };
 
 /** Removes a bucket object. Enqueued by the API after it drops its reference. */
