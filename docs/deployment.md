@@ -251,6 +251,7 @@ docker run --rm --network host \
   -e STORAGE_ACCESS_KEY_ID=minioadmin \
   -e STORAGE_SECRET_ACCESS_KEY=minioadmin \
   -e STORAGE_BUCKET=app-uploads \
+  -e EMAIL_FROM="Acme <onboarding@resend.dev>" \
   api
 ```
 
