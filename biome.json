@@ -41,7 +41,9 @@
 							":URL:",
 							[":NODE:", ":BUN:"],
 							":BLANK_LINE:",
-							{ "source": [":PACKAGE:", "!@repo/**"] },
+							{
+								"source": [":PACKAGE:", "!@repo/**"]
+							},
 							":BLANK_LINE:",
 							"@repo/**",
 							":BLANK_LINE:",
@@ -69,7 +71,8 @@
 						"paths": {
 							"@repo/db/client": "Apps and packages read the database through @repo/db/operations/*. Compose several operations with withTransaction from @repo/db/transaction.",
 							"@aws-sdk/client-s3": "Object storage goes through @repo/storage, which owns the client, the presigned-upload flow and the key-ownership checks.",
-							"@aws-sdk/s3-request-presigner": "Object storage goes through @repo/storage."
+							"@aws-sdk/s3-request-presigner": "Object storage goes through @repo/storage.",
+							"resend": "Email goes through @repo/email, which owns the Resend client, its retry policy and the log transport."
 						}
 					}
 				},
@@ -88,6 +91,148 @@
 	},
 	"overrides": [
 		{
+			"includes": ["packages/**", "!packages/features/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"@repo/db/client": "Apps and packages read the database through @repo/db/operations/*. Compose several operations with withTransaction from @repo/db/transaction.",
+									"@aws-sdk/client-s3": "Object storage goes through @repo/storage, which owns the client, the presigned-upload flow and the key-ownership checks.",
+									"@aws-sdk/s3-request-presigner": "Object storage goes through @repo/storage.",
+									"resend": "Email goes through @repo/email, which owns the Resend client, its retry policy and the log transport."
+								},
+								"patterns": [
+									{
+										"group": ["@repo/features", "@repo/features/**"],
+										"message": "@repo/features is the top of the package graph: apps import it, nothing under packages/ does. A package that needs business logic is a sign that logic belongs in features. See docs/architecture.md."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["packages/infra/auth/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"@aws-sdk/client-s3": "Object storage goes through @repo/storage, which owns the client, the presigned-upload flow and the key-ownership checks.",
+									"@aws-sdk/s3-request-presigner": "Object storage goes through @repo/storage.",
+									"resend": "Email goes through @repo/email, which owns the Resend client, its retry policy and the log transport."
+								},
+								"patterns": [
+									{
+										"group": ["@repo/features", "@repo/features/**"],
+										"message": "@repo/features is the top of the package graph: apps import it, nothing under packages/ does. A package that needs business logic is a sign that logic belongs in features. See docs/architecture.md."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["packages/infra/storage/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"@repo/db/client": "Apps and packages read the database through @repo/db/operations/*. Compose several operations with withTransaction from @repo/db/transaction.",
+									"resend": "Email goes through @repo/email, which owns the Resend client, its retry policy and the log transport."
+								},
+								"patterns": [
+									{
+										"group": ["@repo/features", "@repo/features/**"],
+										"message": "@repo/features is the top of the package graph: apps import it, nothing under packages/ does. A package that needs business logic is a sign that logic belongs in features. See docs/architecture.md."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["packages/infra/email/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"@repo/db/client": "Apps and packages read the database through @repo/db/operations/*. Compose several operations with withTransaction from @repo/db/transaction.",
+									"@aws-sdk/client-s3": "Object storage goes through @repo/storage, which owns the client, the presigned-upload flow and the key-ownership checks.",
+									"@aws-sdk/s3-request-presigner": "Object storage goes through @repo/storage."
+								},
+								"patterns": [
+									{
+										"group": ["@repo/features", "@repo/features/**"],
+										"message": "@repo/features is the top of the package graph: apps import it, nothing under packages/ does. A package that needs business logic is a sign that logic belongs in features. See docs/architecture.md."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"apps/**",
+				"!apps/**/tests/**",
+				"!apps/**/__tests__/**",
+				"!apps/**/test-setup*.ts"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"@repo/db/client": "Apps and packages read the database through @repo/db/operations/*. Compose several operations with withTransaction from @repo/db/transaction.",
+									"@aws-sdk/client-s3": "Object storage goes through @repo/storage, which owns the client, the presigned-upload flow and the key-ownership checks.",
+									"@aws-sdk/s3-request-presigner": "Object storage goes through @repo/storage.",
+									"resend": "Email goes through @repo/email, which owns the Resend client, its retry policy and the log transport."
+								},
+								"patterns": [
+									{
+										"group": [
+											"@repo/db",
+											"@repo/db/**",
+											"@repo/auth",
+											"@repo/auth/**",
+											"@repo/storage",
+											"@repo/storage/**",
+											"@repo/email",
+											"@repo/email/**",
+											"!@repo/*/env",
+											"!@repo/auth/client"
+										],
+										"message": "Apps reach the database, auth, storage and email only through @repo/features/*. From an app, only an infra package's ./env subpath (env composition) and @repo/auth/client (the browser SDK) are importable. See docs/architecture.md."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
 			"includes": ["apps/web/public/**"],
 			"linter": {
 				"rules": {
@@ -98,31 +243,11 @@
 			}
 		},
 		{
-			"includes": ["packages/infra/auth/**"],
-			"linter": {
-				"rules": {
-					"style": {
-						"noRestrictedImports": "off"
-					}
-				}
-			}
-		},
-		{
 			"includes": ["apps/cron/src/lib/exec.ts"],
 			"linter": {
 				"rules": {
 					"style": {
 						"noProcessEnv": "off"
-					}
-				}
-			}
-		},
-		{
-			"includes": ["packages/infra/storage/**"],
-			"linter": {
-				"rules": {
-					"style": {
-						"noRestrictedImports": "off"
 					}
 				}
 			}
