@@ -13,6 +13,11 @@
 			"types": "./src/result.ts",
 			"import": "./src/result.ts",
 			"default": "./src/result.ts"
+		},
+		"./timeout": {
+			"types": "./src/timeout.ts",
+			"import": "./src/timeout.ts",
+			"default": "./src/timeout.ts"
 		}
 	},
 	"scripts": {
