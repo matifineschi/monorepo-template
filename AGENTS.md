@@ -8,7 +8,8 @@ before you claim anything works.
 ## What this repo is
 
 A full-stack TypeScript monorepo **template**: Next.js web app, Hono API, BullMQ
-workers, Drizzle/Postgres, better-auth, and S3-compatible file storage.
+workers, a scheduled-operations service, Drizzle/Postgres, better-auth, and
+S3-compatible file storage. Deployable to any host that runs containers.
 
 It is a starting point, not a product. That makes the conventions the actual
 deliverable — a feature added the wrong way costs more here than it would in an
@@ -68,6 +69,7 @@ apps/
   web/          Next.js 16 frontend
   api/          Hono backend API
   workers/      BullMQ background workers
+  cron/         One-shot infra jobs (platform-scheduled): database + bucket backups and their restore checks
 packages/
   ui/           Astryx theme layer: globals.css + the Theme/Link providers
   queues/       BullMQ queue definitions and job payload types
@@ -257,6 +259,61 @@ pino into the browser bundle. Its redaction list is a backstop for a fixed set
 of paths, not a licence — do not pass a request body, a header bag or an env
 object to it.
 
+## Scheduled work: two homes, one question
+
+Scheduled work is split between `apps/workers` and `apps/cron`, and the line
+between them is not negotiable:
+
+> **Does this need the application's code, and should it stop when the
+> application is unhealthy?**
+
+| Answer                                                   | Home                                      |
+| -------------------------------------------------------- | ----------------------------------------- |
+| Yes — digest emails, trial expiry, dunning, re-indexing  | a BullMQ repeatable job in `apps/workers` |
+| No — backups, restore drills, cert renewal, log shipping | `apps/cron`                               |
+
+Business logic _should_ stop when the platform is unhealthy: running dunning
+against a half-broken system is worse than not running it. Infrastructure
+operations must not — and a backup that needs Redis up and the workers app
+deployed stops silently in exactly the situation where you need it.
+
+`apps/cron` therefore imports `@repo/db/env` and `@repo/logger` and nothing else
+from the workspace at runtime. **Never give it `@repo/db/client` or
+`@repo/storage`.** It holds three separate credential sets on purpose:
+`BACKUP_S3_*` for the backup bucket (write-limited), `SOURCE_S3_*` for the
+application's bucket (**read-only** — backing something up does require reading
+it, and read-only is how that coupling is contained), and `DATABASE_URL`.
+
+`apps/cron` is **one-shot jobs, scheduled by the platform** — there is no
+long-running process and no in-process scheduler. `src/main.ts` is the
+entrypoint: `main(argv)` runs the one job named in argv and returns the exit
+code (0 ran or skipped, 1 failed, 2 unknown job). Jobs are listed in
+`src/jobs/index.ts`; shared helpers live in `src/lib/`.
+
+All object-storage access goes through the `rclone` binary (`src/lib/rclone.ts`)
+— there is no AWS SDK in `apps/cron`. `src/lib/exec.ts` carries the one narrow
+Biome override: it is the only place outside an `env.ts` allowed to touch
+`process.env`, because it propagates the environment to child processes.
+
+**Credentials never go in argv**, because argv is readable via `ps`: pg_dump and
+pg_restore get theirs through `PG*` variables (`pgEnv()` in `src/lib/postgres.ts`),
+rclone through `RCLONE_CONFIG_*`. **`rclone copy`, never `rclone sync`**: sync
+would propagate a deletion into the backup. Overwrites stay recoverable because
+the backup bucket is versioned and a lifecycle rule expires noncurrent versions
+after 90 days — that rule lives on the bucket, never in application code.
+**pg_dump writes to a file that is
+checked before upload**, never streamed into the upload — a pg_dump that dies
+mid-stream would otherwise be stored as a successful backup.
+
+Each run takes a Postgres advisory lock on the job name, so an overlapping run
+(a manual one during an incident) skips rather than double-runs.
+
+Adding a job: write it in `src/jobs/`, add it to `src/jobs/index.ts` with a
+heartbeat variable, add that to `env.ts` and `.env.example`, and add a cron
+entry on the platform running `bun run dist/main.js <job>`.
+
+Conventions in full: [docs/backups.md](./docs/backups.md).
+
 ## Background jobs
 
 Queue names and job payload types live in `packages/queues/src/jobs.ts`. Always
@@ -344,7 +401,10 @@ The ownership rule:
 - **Integration packages own their variables.** `@repo/db` owns `DATABASE_URL`
   and the `DATABASE_*` pool settings, `@repo/auth` owns the `BETTER_AUTH_*` pair,
   `@repo/queues` owns `REDIS_URL` and `QUEUE_PREFIX`, `@repo/storage` owns the
-  `STORAGE_*` set, `@repo/logger` owns `LOG_LEVEL`. Each declares them in
+  `STORAGE_*` set, `@repo/logger` owns `LOG_LEVEL`. `apps/cron` owns the
+  `BACKUP_S3_*`, `SOURCE_S3_*`, `POSTGRES_*`, `BUCKET_BACKUP_*` and
+  `RESTORE_CHECK_*` sets, because the backup
+  bucket is deliberately not the application's. Each declares them in
   `src/env.ts` with `createEnv` and exposes them through a `"./env"` subpath.
 - **`NODE_ENV` is declared once**, in `baseEnv` (`@repo/env/base`), which every
   app extends. It used to be redeclared identically in all three apps. It sits
@@ -353,8 +413,14 @@ The ownership rule:
   validation.
 - **Apps compose** with `extends: [...]` and declare only what they alone use.
 - **Validation is forced at boot** by importing `env` from the process
-  entrypoint: `src/index.ts` for api and workers, `instrumentation.ts` for web
-  (Next has no other server-start hook — the `void env` there is load-bearing).
+  entrypoint: `src/index.ts` for api and workers, `src/main.ts` for cron,
+  `instrumentation.ts` for web (Next has no other server-start hook — the
+  `void env` there is load-bearing).
+- **Never read a platform's own variables.** Take a generic one and let the
+  deployment map onto it: `DATABASE_APP_NAME=${RAILWAY_SERVICE_NAME}` rather
+  than reading `RAILWAY_SERVICE_NAME` in `@repo/db`. One line shorter, and the
+  package stops being deployable anywhere else. Same reason there are no
+  `@t3-oss/env-core` platform presets here.
 
 `shouldSkipEnvValidation()` from `@repo/env` skips validation when
 `SKIP_ENV_VALIDATION=1` or when `npm_lifecycle_event` is one of a small
@@ -573,20 +639,65 @@ database.
 Husky runs `format:check` on pre-commit and the full `bun run ci` on pre-push.
 **Do not bypass either with `--no-verify`.**
 
+## Deployment
+
+The template is **platform-agnostic and stays that way.** There is no
+`railway.json`, no `vercel.json`, no `fly.toml`, and nothing reads a platform's
+own variables. What it ships is a contract, and one `Dockerfile` per app as the
+portable artefact.
+
+The contract, which is what actually makes an app deployable:
+
+- config from env only, validated at boot
+- the HTTP port is injected, never hardcoded
+- logs are JSON on stdout
+- `SIGTERM` drains in-flight work, then exits 0 — all four apps do this
+- **liveness and readiness are separate**: `GET /health` checks nothing but the
+  process, `GET /ready` checks Postgres, Redis and the bucket. Do not merge
+  them. A liveness probe that checks dependencies gets containers _killed_ when
+  the database blips, turning a hiccup into a rolling restart of everything.
+- migrations are a release step, never app boot: with two replicas they race
+
+Build with the context at the **repo root**, since a workspace install needs the
+root `package.json` and `bun.lock`:
+
+```sh
+docker build -f apps/api/Dockerfile -t api .
+```
+
+Per-platform recipes live in [docs/deployment.md](./docs/deployment.md) as
+**documentation, not configuration**. A recipe in a doc is knowledge; a
+committed `railway.json` is a default every generated project inherits.
+
+Each `Dockerfile` copies the whole context in one `COPY` and then installs.
+Listing every workspace manifest separately caches better but has to be edited
+whenever a package is added — upkeep a template should not impose. Keep
+`.dockerignore` tight instead.
+
 ## CI
 
 `.github/workflows/ci.yml` runs on every pull request, on pushes to `main`, and
-in a merge group. Three jobs:
+in a merge group. Four jobs:
 
 - **check** — `bun run ci` then `bun run knip`. No services, so a formatting
-  mistake fails in under a minute rather than after docker has come up.
-- **integration** — brings up `docker-compose.test.yml` with the same
-  `bun run test-infra:up` a developer runs, then `bun run test:integration`.
-  It is the same compose file on purpose: GitHub `services:` blocks cannot take
-  a `command`, which MinIO needs, and a second copy of the stack in workflow
-  YAML is a copy that drifts.
+  mistake fails in under a minute rather than after docker has come up. Biome
+  runs with `--error-on-warnings`: an unused import is reported as a warning,
+  and a warning that does not fail the gate is one nobody fixes.
+- **integration** — installs the PostgreSQL 17 client and rclone (the runner
+  ships a 16 client, and `pg_dump` refuses a newer server), brings up
+  `docker-compose.test.yml` with the same `bun run test-infra:up` a developer
+  runs, then `bun run test:integration`. It is the same compose file on
+  purpose: GitHub `services:` blocks cannot take a `command`, which MinIO
+  needs, and a second copy of the stack in workflow YAML is a copy that drifts.
+  The cron backup suites fail when `CI` is set and those binaries are missing;
+  on a laptop they skip.
 - **build** — copies each `.env.example` to `.env` and runs `bun run build`,
   because `next build` validates env.
+- **images** — builds all four images, boots the API against the test stack and
+  polls `/ready` until it returns 200. Workers, web and cron are built and not
+  booted: the workers image serves no port, and the cron jobs are what the
+  integration job runs. That is what makes "this deploys" a tested property
+  rather than a claim, and it tests it without naming a platform.
 
 `.github/actions/setup` reads the Bun version out of `packageManager` rather
 than pinning it a second time, caches `~/.bun/install/cache` against `bun.lock`,
@@ -610,6 +721,14 @@ fails instead of silently resolving.
 - Adding `--concurrency=1` to `test:integration`.
 - Pointing an integration test at the dev stack (5430 / 6379 / 9000) instead of
   the test stack (54322 / 63792 / 59002).
+- Committing a `railway.json`, `vercel.json`, `fly.toml`, or anything else that
+  makes one host the default.
+- Reading a platform's own env var (`RAILWAY_*`, `VERCEL_*`) anywhere.
+- Checking dependencies in `/health`, or merging it with `/ready`.
+- Running migrations at app boot.
+- Giving `apps/cron` the application's database client or storage credentials.
+- Putting business logic in `apps/cron`, or infrastructure operations in
+  `apps/workers`.
 - Hand-editing `packages/infra/db/src/schema/user-auth.ts`.
 - Accepting a storage key from a request without `isOwnedBy`.
 - Committing a `.env`.

@@ -11,6 +11,8 @@ A full-stack TypeScript monorepo boilerplate built with Turborepo, Bun, Next.js,
 - **Frontend**: [Next.js 16](https://nextjs.org) with React 19
 - **Backend API**: [Hono](https://hono.dev) (lightweight, edge-ready)
 - **Background jobs**: [BullMQ](https://docs.bullmq.io) on Redis
+- **Scheduled ops**: one-shot backup jobs run by the platform's cron — nightly database and bucket backups, with weekly restore checks
+- **Deployment**: one Dockerfile per app; no platform lock-in
 - **Database**: [PostgreSQL 17](https://www.postgresql.org) via Docker
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team) with migrations and RLS policies
 - **Auth**: [better-auth](https://www.better-auth.com) (email + password)
@@ -78,6 +80,7 @@ apps/
   web/              Next.js frontend — public pages, auth flow, dashboard
   api/              Hono backend API — REST endpoints, CORS, presigned uploads
   workers/          BullMQ workers — welcome email, async object cleanup
+  cron/             One-shot infra jobs — database + bucket backups and restore checks
 packages/
   ui/               Astryx theme layer (globals.css + providers)
   queues/           BullMQ queue definitions and job payload types
@@ -169,6 +172,41 @@ authorization boundary. Deletion is queued and performed by `apps/workers`.
 Storage is stateless — there is intentionally no `files` table, since not every
 project wants file metadata in Postgres. See
 [packages/infra/storage/README.md](./packages/infra/storage/README.md).
+
+## Deployment
+
+Platform-agnostic by design: one `Dockerfile` per app, and no `railway.json`,
+`vercel.json` or `fly.toml` anywhere. The repo satisfies a deploy _contract_ —
+env-only config, injected port, JSON logs on stdout, `SIGTERM` draining,
+separate `/health` and `/ready`, migrations as a release step — and the ten
+lines of host-specific glue belong to your project.
+
+```sh
+docker build -f apps/api/Dockerfile -t api .   # context is the repo ROOT
+```
+
+CI builds all four images and boots the API against the test stack until
+`/ready` returns 200, so deployability is tested rather than asserted. Recipes
+for Railway, Fly, Vercel, Compose and Kubernetes are in
+[docs/deployment.md](./docs/deployment.md).
+
+## Backups
+
+`apps/cron` is four one-shot jobs, each scheduled as a cron entry on your
+platform (`bun run dist/main.js <job>`): a nightly `pg_dump`, checked before it
+is uploaded; a nightly incremental `rclone copy` of the application's bucket
+into a versioned backup bucket that expires noncurrent versions after 90 days;
+and weekly checks that restore the dump into a
+throwaway database and re-download a sample of files to compare byte for byte.
+
+A database backup without the files is only half a recovery — restore the rows
+and every uploaded document is a dead link.
+
+It is a separate service from `apps/workers` on purpose: a backup must not share
+a failure domain with what it backs up. A crash-looping app deploy or a Redis
+outage must not be able to stop backups silently. See
+[docs/backups.md](./docs/backups.md) for the full reasoning, the bucket settings
+the application cannot make for you, and how to restore for real.
 
 ## Errors and Logging
 
