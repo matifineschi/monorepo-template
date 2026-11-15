@@ -32,7 +32,10 @@ const REDACTED_PATHS = [
 ];
 
 const options = {
-	level: loggerEnv.LOG_LEVEL,
+	// The fallback repeats the schema's default on purpose: with validation
+	// skipped (the web image's `next build`), t3-env hands back the raw value,
+	// so an unset LOG_LEVEL is `undefined` and pino throws at import.
+	level: loggerEnv.LOG_LEVEL ?? "info",
 	redact: { paths: REDACTED_PATHS, censor: "[Redacted]" },
 	serializers: { err: serializeError, error: serializeError },
 	// Pino's default is epoch millis; ISO is what every log viewer expects.

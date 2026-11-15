@@ -1,11 +1,10 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
+import { closeFeatureConnections } from "@repo/features/system";
 import { logger } from "@repo/logger";
-import { closeRedisProbe } from "@repo/queues";
 
 import { env } from "./env";
-import { closeQueues } from "./lib/queues";
 import type { AppVariables } from "./lib/types";
 import { requestLogger } from "./middleware/request-logger";
 import { sessionMiddleware } from "./middleware/session";
@@ -82,7 +81,7 @@ if (import.meta.main) {
 				server.stop(false),
 				new Promise((resolve) => setTimeout(resolve, DRAIN_TIMEOUT_MS)),
 			]);
-			await Promise.all([closeQueues(), closeRedisProbe()]);
+			await closeFeatureConnections();
 		} catch (error) {
 			logger.error({ err: error }, "Error during shutdown");
 		}

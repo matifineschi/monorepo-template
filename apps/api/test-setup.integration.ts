@@ -15,8 +15,9 @@ import { provisionTestBucket } from "@repo/storage/testing/bucket";
  *
  * Order matters: every provision function sets an env var that a package reads
  * once, at import time. Nothing here may import @repo/db, @repo/storage or
- * @repo/queues themselves — only their `testing/*` subpaths, which deliberately
- * do not touch the packages' own env modules.
+ * @repo/queues themselves (nor @repo/features, which imports them) — only
+ * their `testing/*` subpaths, which deliberately do not touch the packages'
+ * own env modules.
  */
 process.env.TEST_DATABASE_ADMIN_URL ??=
 	"postgres://postgres:postgres@localhost:54322/postgres";

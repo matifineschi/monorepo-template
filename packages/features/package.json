@@ -1,0 +1,63 @@
+{
+	"name": "@repo/features",
+	"version": "0.1.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		"./auth": {
+			"types": "./src/auth/index.ts",
+			"import": "./src/auth/index.ts",
+			"default": "./src/auth/index.ts"
+		},
+		"./email": {
+			"types": "./src/email/index.ts",
+			"import": "./src/email/index.ts",
+			"default": "./src/email/index.ts"
+		},
+		"./files": {
+			"types": "./src/files/index.ts",
+			"import": "./src/files/index.ts",
+			"default": "./src/files/index.ts"
+		},
+		"./system": {
+			"types": "./src/system/index.ts",
+			"import": "./src/system/index.ts",
+			"default": "./src/system/index.ts"
+		},
+		"./users": {
+			"types": "./src/users/index.ts",
+			"import": "./src/users/index.ts",
+			"default": "./src/users/index.ts"
+		}
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "bun test src",
+		"test:integration": "bun test --preload ./test-setup.integration.ts tests/integration",
+		"email:dev": "email dev --dir src/email/templates --port 3030"
+	},
+	"dependencies": {
+		"@astryxdesign/core": "catalog:",
+		"@repo/auth": "workspace:*",
+		"@repo/db": "workspace:*",
+		"@repo/email": "workspace:*",
+		"@repo/logger": "workspace:*",
+		"@repo/queues": "workspace:*",
+		"@repo/storage": "workspace:*",
+		"@repo/ui": "workspace:*",
+		"@repo/utils": "workspace:*",
+		"bullmq": "^6.7.5",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"react-email": "catalog:",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@react-email/ui": "catalog:",
+		"@repo/typescript-config": "workspace:*",
+		"@types/node": "catalog:",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"typescript": "catalog:"
+	}
+}

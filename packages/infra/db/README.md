@@ -51,9 +51,17 @@ doesn't collide with the domain `users` table.
 `src/operations/` is a hand-written typed data-access layer, one file per domain,
 each its own subpath export.
 
-**Apps import `@repo/db/operations/*`. Apps never import `@repo/db/client`.**
-The drizzle client is internal — that rule is what keeps query shapes in one
-reviewable place instead of spread across route handlers. It applies to tests
+**`@repo/features` imports `@repo/db/operations/*`; nothing imports
+`@repo/db/client` except `@repo/auth`; apps import neither.** The drizzle client
+is internal — that rule is what keeps query shapes in one reviewable place
+instead of spread across route handlers. Apps reach the database only through
+`@repo/features` (see [docs/architecture.md](../../../docs/architecture.md)).
+
+**Operations store; they don't decide.** An operation takes the values to write
+and returns plain shapes. Policy about those values — how a sign-up name is
+split into first and last, who may delete what — belongs in features. That is
+why `createUser` takes `{ id, firstName, lastName }` and `getNameParts` lives in
+`@repo/features/users`. It applies to tests
 too: the integration tests here go through operations like everyone else, and
 `createAuthUser` exists precisely so they can arrange fixtures without the raw
 client.

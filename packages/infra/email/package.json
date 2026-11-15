@@ -1,0 +1,41 @@
+{
+	"name": "@repo/email",
+	"version": "0.1.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./env": {
+			"types": "./src/env.ts",
+			"import": "./src/env.ts",
+			"default": "./src/env.ts"
+		}
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "bun test src"
+	},
+	"dependencies": {
+		"@react-email/render": "catalog:",
+		"@repo/env": "workspace:*",
+		"@repo/logger": "workspace:*",
+		"@repo/utils": "workspace:*",
+		"@t3-oss/env-core": "catalog:",
+		"resend": "catalog:",
+		"zod": "catalog:"
+	},
+	"peerDependencies": {
+		"react": "catalog:",
+		"react-dom": "catalog:"
+	},
+	"devDependencies": {
+		"@repo/typescript-config": "workspace:*",
+		"@types/node": "catalog:",
+		"@types/react": "catalog:",
+		"typescript": "catalog:"
+	}
+}

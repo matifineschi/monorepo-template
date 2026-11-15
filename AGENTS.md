@@ -8,8 +8,10 @@ before you claim anything works.
 ## What this repo is
 
 A full-stack TypeScript monorepo **template**: Next.js web app, Hono API, BullMQ
-workers, a scheduled-operations service, Drizzle/Postgres, better-auth, and
-S3-compatible file storage. Deployable to any host that runs containers.
+workers, a scheduled-operations service, Drizzle/Postgres, better-auth,
+S3-compatible file storage and Resend email. Business logic lives in one package,
+`@repo/features`, which every app calls. Deployable to any host that runs
+containers.
 
 It is a starting point, not a product. That makes the conventions the actual
 deliverable — a feature added the wrong way costs more here than it would in an
@@ -68,10 +70,11 @@ is correct there and destructive against the stack `bun run dev` is using. See
 apps/
   web/          Next.js 16 frontend
   api/          Hono backend API
-  workers/      BullMQ background workers
+  workers/      BullMQ background workers (wiring only; job bodies live in features)
   cron/         One-shot infra jobs (platform-scheduled): database + bucket backups and their restore checks
 packages/
-  ui/           Astryx theme layer: globals.css + the Theme/Link providers
+  features/     ALL business logic: auth, users, email, files, system — one subpath each
+  ui/           Astryx theme layer: globals.css, the Theme/Link providers, the theme object
   queues/       BullMQ queue definitions and job payload types
   utils/        createError + Result — the error model, used everywhere
   logger/       pino, one config, every server process
@@ -79,15 +82,41 @@ packages/
   typescript-config/ Shared tsconfig presets
   infra/
     db/         Drizzle schema, migrations, and the operations DAL
-    auth/       better-auth config
+    auth/       createAuth(): better-auth + the Drizzle adapter
     storage/    S3-compatible object storage
+    email/      Resend: render, send, retry, log transport
 ```
 
 Workspaces are `apps/*`, `packages/*`, and `packages/infra/*`. Internal packages
 are named `@repo/*` and referenced as `"workspace:*"`.
 
 `packages/infra/*` means "owns a connection to an external system" — Postgres,
-better-auth, a bucket. Everything else goes in `packages/*`.
+better-auth, a bucket, Resend. It holds no business rules. Everything else goes
+in `packages/*`.
+
+## Boundaries: apps → features → infra
+
+**Read [docs/architecture.md](./docs/architecture.md) before adding a feature.**
+The rules, in short:
+
+- **Apps never import `packages/infra/*`.** Server logic in an app is a call to
+  `@repo/features/<module>`: `getSession`, `signInWithEmail`,
+  `createUserUploadUrl`, `processEmailJob`, `checkReadiness`. An app holds
+  routes, pages, server actions, form state and BullMQ wiring — no queries, no
+  SDK calls, no business rules.
+- **The exceptions for app source:** an infra package's `./env` subpath (env
+  composition), and `@repo/auth/client` (the browser SDK). App _tests_ may also
+  import infra for fixtures and `testing/*` provisioners.
+- **`@repo/features` is the top of the package graph.** Nothing under
+  `packages/` imports it.
+- **Infra packages own a connection and nothing else.** What a user is called,
+  who owns a file, what an email says, what happens on sign-up — all features.
+- **`apps/cron` does not depend on features** — a backup must not need the
+  application's pool, bucket credentials or Redis.
+
+Biome's `noRestrictedImports` enforces every rule above (see the overrides at
+the top of `biome.json`). Overrides _replace_ the rule's options, so a new
+global restriction must be added to each override too.
 
 ## Tooling
 
@@ -99,9 +128,9 @@ better-auth, a bucket. Everything else goes in `packages/*`.
   there were, with a second rule set that disagreed with the root one, which is
   how the repo ended up formatting package files at 80 columns and root files at
   120. Do not reintroduce ESLint or Prettier.
-- **TypeScript 5.9**, strict, with `noUncheckedIndexedAccess`. Shared config in
+- **TypeScript 7**, strict, with `noUncheckedIndexedAccess`. Shared config in
   `packages/typescript-config`.
-- **Turborepo 2.9** for task orchestration.
+- **Turborepo 2.11** for task orchestration.
 - **sherif** (`bun run lint:ws`) checks dependency versions across workspaces.
   It runs inside `bun run ci`. The one rule it is told to skip is
   `packages-without-package-json`, because `packages/infra` is a grouping
@@ -160,11 +189,15 @@ The short version:
 - `src/schema/index.ts` is a barrel composing `publicSchema` + `userAuth`.
 - Columns are snake_case, set by `casing: "snake_case"` in **both**
   `drizzle.config.ts` and the runtime `drizzle()` call. Both are required.
-- **Apps import `@repo/db/operations/*`, never `@repo/db/client`.** Every
-  operations file is its own subpath export. The raw drizzle client is internal
-  to the package — including in tests. Biome's `noRestrictedImports` enforces
-  this; `@repo/auth` is the single exception, because better-auth's Drizzle
-  adapter needs the client itself.
+- **`@repo/features` imports `@repo/db/operations/*`, never
+  `@repo/db/client`; apps import neither.** Every operations file is its own
+  subpath export. The raw drizzle client is internal to the package —
+  including in tests. Biome's `noRestrictedImports` enforces this; `@repo/auth`
+  is the single exception, because better-auth's Drizzle adapter needs the
+  client itself.
+- **Operations store; features decide.** An operation takes the values to write
+  (`createUser({ id, firstName, lastName })`) and holds no policy about them —
+  how a name is split is `getNameParts` in `@repo/features/users`.
 - **Every operation takes `executor: DbOrTx = db` as its last parameter.** The
   usual call site passes nothing. Two operations share a transaction via
   `withTransaction` from `@repo/db/transaction`, which is the only sanctioned
@@ -191,9 +224,25 @@ The short version:
 
 ## Auth
 
-`@repo/auth` wraps better-auth with the Drizzle adapter. Its tables live in a
-separate Postgres schema, `user_auth`, so they don't collide with the domain
-`users` table.
+`@repo/auth` exports `createAuth(options)`: better-auth with the Drizzle adapter.
+Its tables live in a separate Postgres schema, `user_auth`, so they don't collide
+with the domain `users` table. It knows nothing about what happens on sign-up or
+on a reset request — those are hooks it is handed.
+
+**The application's instance lives in `@repo/features/auth`**, which wires the
+hooks (provision the profile, enqueue the welcome email, send the reset email)
+and exposes what apps call: `authHandler` (mounted at `/api/auth/*` in web and
+api), `getSession(headers)`, `signInWithEmail`, `signUpWithEmail`,
+`requestPasswordReset` and `resetPassword`. Each returns a `Result` with domain
+codes (`"invalid-credentials"`, `"email-taken"`, `"invalid-token"`); better-auth's
+error strings never reach an app. Sign-in and sign-up return the response
+`headers`, because the `Set-Cookie` in them is the session and forwarding it is
+the framework's job (`forwardAuthCookies` in the web app's login actions).
+
+Password reset: `/forgot-password` → `requestPasswordReset` (same answer whether
+or not the address exists) → email with better-auth's one-time link →
+`/api/auth/reset-password/:token` → `/reset-password?token=` →
+`resetPassword`, which revokes every session → `/sign-in?reset=success`.
 
 `packages/infra/db/src/schema/user-auth.ts` is **generated** — do not hand-edit
 it. Regenerate with `bun run --filter @repo/auth gen:schema`, which runs
@@ -204,9 +253,57 @@ Those patches are `sed` expressions. If better-auth changes its output shape the
 silently no-op and you get tables in the wrong Postgres namespace. **After
 `gen:schema`, always run `db:generate` and read the diff.**
 
-A new better-auth user is provisioned into `public.users` by the
-`databaseHooks.user.create.after` hook. That hook can fire more than once for the
-same id across retries, which is why `createUser` uses `onConflictDoNothing`.
+A new better-auth user is provisioned into `public.users` by `provisionUser`
+(`@repo/features/users`), run from the `user.create.after` hook. That hook can
+fire more than once for the same id across retries, which is why `createUser`
+uses `onConflictDoNothing`. `gen:schema` runs better-auth's CLI against
+`src/cli-config.ts`, an instance with no hooks, because hooks don't affect the
+schema.
+
+## Email
+
+Two packages, split like the rest:
+
+- **`@repo/email`** (infra) owns Resend: `sendEmail({ to, subject, react,
+  idempotencyKey })` renders the React element to HTML and text and returns a
+  `Result<{ id }, "rejected" | "unavailable">`. It retries network errors, 5xx
+  and 429 (honouring `retry-after`) three times; any other 4xx is `"rejected"`,
+  logged with Resend's reason, never retried. It never throws for a delivery
+  failure. Only this package may import `resend`.
+- **`@repo/features/email`** owns what is sent and when: the templates, the
+  subject lines, the idempotency keys, and `processEmailJob` (the email queue's
+  job body).
+
+`EMAIL_TRANSPORT=log` (the default) renders and logs instead of sending, so a
+fresh clone and every test suite need no Resend account. `EMAIL_TRANSPORT=resend`
+requires `RESEND_API_KEY` — a **sending-access** key, never full access — and
+fails at boot without it. `EMAIL_FROM` has no default on purpose: Resend's test
+sender `onboarding@resend.dev` only delivers to the account owner, and a
+fallback would ship it to production.
+
+- **Idempotency keys** are `<event>/<id>` (`welcome-user/<userId>`,
+  `password-reset/<token>`): Resend drops a repeat within 24h.
+- **The welcome email is queued** (job id `welcome-<userId>`) from the sign-up
+  hook and sent by `apps/workers`; enqueue failure is logged and never fails the
+  sign-up.
+- **The reset email is not awaited** inside better-auth's hook, so a request for
+  a registered address doesn't take measurably longer than for an unknown one.
+- **Readiness does not check Resend.** A mail outage must not drain every
+  instance.
+
+**Templates use the Astryx design system.** Astryx components can't render in an
+email client (StyleX classes, `var()`, `light-dark()`), so templates in
+`packages/features/src/email/templates/` are built from `react-email`
+primitives wrapped in `EmailLayout` / `EmailHeading` / `EmailText` /
+`EmailButton`, and styled **only** from `emailTheme` — Astryx's own
+`resolveThemeTokens` run over the theme `@repo/ui/theme` exports, made
+email-safe. No hex or px literal in a template; add a token to `emailTheme`
+instead. Templates are default exports (the preview server needs that).
+
+Preview: `bun run --filter @repo/features email:dev` → http://localhost:3030.
+
+Test addresses that work with any key: `delivered@resend.dev`,
+`bounced@resend.dev`, `complained@resend.dev`.
 
 ## Errors and logging
 
@@ -267,10 +364,10 @@ between them is not negotiable:
 > **Does this need the application's code, and should it stop when the
 > application is unhealthy?**
 
-| Answer                                                   | Home                                      |
-| -------------------------------------------------------- | ----------------------------------------- |
-| Yes — digest emails, trial expiry, dunning, re-indexing  | a BullMQ repeatable job in `apps/workers` |
-| No — backups, restore drills, cert renewal, log shipping | `apps/cron`                               |
+| Answer                                                   | Home                                                                    |
+| -------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Yes — digest emails, trial expiry, dunning, re-indexing  | a BullMQ repeatable job in `apps/workers`, its body in `@repo/features` |
+| No — backups, restore drills, cert renewal, log shipping | `apps/cron`                                                             |
 
 Business logic _should_ stop when the platform is unhealthy: running dunning
 against a half-broken system is worse than not running it. Infrastructure
@@ -320,26 +417,37 @@ Queue names and job payload types live in `packages/queues/src/jobs.ts`. Always
 reference `QUEUE_NAMES.<queue>` rather than writing the string literal — the name
 is baked into Redis keys, so renaming one orphans every job already enqueued.
 
-One worker file per queue, named `<queue>.worker.ts`. Each splits into two parts:
+Each queue has two halves in two places:
 
-- `processXJob(data, deps)` — the job body, with no BullMQ or Redis anywhere near
-  it, and its side effects injected as parameters.
-- `startXWorker(options)` — constructs the `Worker` and wires the connection.
+- `processXJob(data, deps)` in **`@repo/features/<module>`** — the job body,
+  with no BullMQ or Redis anywhere near it and its side effects injected as
+  parameters (`processEmailJob(data, deliver)`, `processFileJob(data, remove)`).
+- `startXWorker(options)` in **`apps/workers/src/workers/<queue>.worker.ts`** —
+  constructs the `Worker`, wires the connection, logs completions and failures.
+  Nothing else.
 
-That split exists so the job body is testable without a live Redis, and so the
-place to plug in a real provider is a typed seam rather than a `// TODO`. See
-`apps/workers/src/workers/email.worker.ts` for the shape.
+The job body is unit-tested in features without a live Redis; the worker is
+covered by the workers integration suite (producer → Redis → consumer).
+Producers enqueue through features too (`enqueueWelcomeEmail`,
+`requestFileDeletion`), using the lazy queue singletons in
+`packages/features/src/shared/queues.ts`; every app that produces calls
+`closeFeatureConnections()` on shutdown.
+
+A job body throws only for a failure worth retrying — BullMQ retries what
+throws. A permanent failure (Resend rejecting a sender) is logged and returns.
 
 To add a queue: add the name to `QUEUE_NAMES` and a payload type to `jobs.ts`,
-add a `createXQueue()` in `queues.ts`, export both from `src/index.ts`, then add
-the worker file and register it in `apps/workers/src/index.ts`. The files queue is
-the worked example.
+add a `createXQueue()` in `queues.ts`, export both from `src/index.ts`, add the
+producer and `processXJob` in features, then the worker file and its
+registration in `apps/workers/src/index.ts`. The files queue is the worked
+example.
 
 ## File storage
 
-`@repo/storage` is the only place allowed to import `@aws-sdk/*`; a route that
-reaches for the SDK directly bypasses `isOwnedBy`, so `noRestrictedImports`
-makes that a build failure rather than a review comment.
+`@repo/storage` is the only place allowed to import `@aws-sdk/*`, and only
+`@repo/features/files` calls `@repo/storage`. A route that reached for either
+directly would bypass `isOwnedBy`, so `noRestrictedImports` makes that a build
+failure rather than a review comment.
 
 It fronts any S3-compatible bucket — Silo (MinIO-compatible) locally, S3/R2/Spaces
 in production. Swapping providers is an env change, not a code change. The
@@ -369,8 +477,11 @@ ownership, so:
 - **Never build a key from a client-supplied string.**
 - **Never add a route that takes a key without calling `isOwnedBy` first.**
 
-`packages/infra/storage/src/keys.ts` carries that weight and has the most
-thorough unit test in the repo. Treat changes to it as security changes.
+`packages/features/src/files/keys.ts` carries that weight and has the most
+thorough unit test in the repo. Treat changes to it as security changes. It
+lives in features, not storage, because it is policy ("an upload belongs to the
+user whose id prefixes it"), not plumbing — `@repo/storage` takes whatever key
+it is given.
 
 The client sets `requestChecksumCalculation: "WHEN_REQUIRED"` whenever
 `STORAGE_ENDPOINT` is not AWS. Recent AWS SDK versions attach a trailing CRC32
@@ -378,8 +489,8 @@ checksum to every upload, which real S3 accepts and MinIO rejects with an error
 that says nothing about checksums. Scoped to a custom endpoint so a deployment
 against real S3 keeps the stricter default.
 
-Object deletion is asynchronous: the API enqueues `delete-file` and
-`apps/workers` performs it, because bucket deletes are slow and fail
+Object deletion is asynchronous: `requestFileDeletion` checks ownership and
+enqueues `delete-file`, and `apps/workers` runs `processFileJob`, because bucket deletes are slow and fail
 independently of the request. `deleteObject` is idempotent by contract —
 BullMQ retries, and a delete that threw on an already-absent object would turn
 one transient failure into a permanent one.
@@ -401,7 +512,8 @@ The ownership rule:
 - **Integration packages own their variables.** `@repo/db` owns `DATABASE_URL`
   and the `DATABASE_*` pool settings, `@repo/auth` owns the `BETTER_AUTH_*` pair,
   `@repo/queues` owns `REDIS_URL` and `QUEUE_PREFIX`, `@repo/storage` owns the
-  `STORAGE_*` set, `@repo/logger` owns `LOG_LEVEL`. `apps/cron` owns the
+  `STORAGE_*` set, `@repo/email` owns `EMAIL_TRANSPORT`, `EMAIL_FROM` and
+  `RESEND_API_KEY`, `@repo/logger` owns `LOG_LEVEL`. `apps/cron` owns the
   `BACKUP_S3_*`, `SOURCE_S3_*`, `POSTGRES_*`, `BUCKET_BACKUP_*` and
   `RESTORE_CHECK_*` sets, because the backup
   bucket is deliberately not the application's. Each declares them in
@@ -412,6 +524,9 @@ The ownership rule:
   `src/env.ts` in the repo does — stays free of `createEnv`'s import-time
   validation.
 - **Apps compose** with `extends: [...]` and declare only what they alone use.
+  An app extends the env of every infra package the features it imports reach:
+  web and api import `@repo/features/auth`, which sends and enqueues email, so
+  both extend `emailEnv` and `queuesEnv`.
 - **Validation is forced at boot** by importing `env` from the process
   entrypoint: `src/index.ts` for api and workers, `src/main.ts` for cron,
   `instrumentation.ts` for web (Next has no other server-start hook — the
@@ -458,6 +573,15 @@ Each workspace with tests has a `bunfig.toml` preloading `test-setup.ts`, which
 supplies local docker defaults with `??=`. That is why a fresh clone can run the
 whole suite with no env files, and why `cd apps/api && bun test src` works
 standalone.
+
+**Where a test goes follows the layers.** Business rules are unit-tested in
+`packages/features` with their side effects injected (a recording `deliver`, a
+recording `remove`); apps keep only the tests of their own glue (route status
+codes, the producer → Redis → worker round trip, sign-up over HTTP). App tests
+clean up and assert through features too (`deleteAccount`,
+`findAccountByEmail`) rather than raw operations. A workspace whose unit tests
+have all moved out runs `bun test src --pass-with-no-tests` (`@repo/db`,
+`@repo/storage`, `workers`).
 
 **Do not run `bun test` from the repo root.** No bunfig applies there, and it
 would sweep the integration suites into a run with no docker guarantee.
@@ -713,8 +837,17 @@ fails instead of silently resolving.
 - Hand-editing the generated Astryx block at the bottom of this file.
 - `npm install` or `pnpm install`.
 - Reading `process.env` directly outside a `src/env.ts`.
-- Importing `@repo/db/client` from an app — use `@repo/db/operations/*`, and
-  `@repo/db/transaction` to compose them.
+- Importing any `packages/infra/*` package from app source — call
+  `@repo/features/*`. Only `./env` subpaths and `@repo/auth/client` are allowed.
+- Importing `@repo/features` from anything under `packages/`.
+- Putting a business rule in an infra package (or in an app). See
+  [docs/architecture.md](./docs/architecture.md#where-does-this-code-go).
+- Importing `@repo/db/client` outside `@repo/db` and `@repo/auth` — use
+  `@repo/db/operations/*`, and `@repo/db/transaction` to compose them.
+- Importing `resend` outside `@repo/email`, or styling an email template with a
+  literal instead of `emailTheme`.
+- Awaiting an email send inside a request that must not fail or slow down on it
+  (sign-up, reset request) — enqueue it or fire it and log the result.
 - Importing `@aws-sdk/*` outside `@repo/storage`.
 - `console.log` — use `@repo/logger`.
 - Adding a per-package `biome.json` or a per-package `lint` script back.

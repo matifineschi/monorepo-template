@@ -1,10 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
+import { closeFeatureConnections } from "@repo/features/system";
 import {
-	deleteAuthUserById,
-	getAuthUserByEmail,
-} from "@repo/db/operations/user-auth";
-import { deleteUserById, getUserById } from "@repo/db/operations/users";
+	deleteAccount,
+	findAccountByEmail,
+	getUserProfile,
+} from "@repo/features/users";
+import { createEmailQueue } from "@repo/queues";
 
 import { app } from "../../src/index";
 
@@ -15,21 +17,17 @@ import { app } from "../../src/index";
  *
  * Requires real Postgres. Run-scoped emails so re-runs never collide.
  *
- * Note it reaches the database only through @repo/db/operations/* — the same
- * rule application code follows. Nothing here imports @repo/db/client.
+ * Note it reaches the database only through @repo/features — the same rule
+ * application code follows. Nothing in an app imports @repo/db.
  */
 const RUN = Date.now().toString(36);
 const EMAIL = `signup-${RUN}@example.test`;
 const SESSION_EMAIL = `signup-session-${RUN}@example.test`;
 const PASSWORD = "correct-horse-battery-staple";
 
-/** FK order matters: public.users before user_auth.users (ON DELETE RESTRICT). */
 async function removeUser(email: string) {
-	const authUser = await getAuthUserByEmail(email);
-	if (!authUser) return;
-
-	await deleteUserById(authUser.id);
-	await deleteAuthUserById(authUser.id);
+	const authUser = await findAccountByEmail(email);
+	if (authUser) await deleteAccount(authUser.id);
 }
 
 async function cleanup() {
@@ -37,8 +35,16 @@ async function cleanup() {
 	await removeUser(SESSION_EMAIL);
 }
 
+/** Sign-up enqueues welcome emails; no worker runs here to consume them. */
+const emailQueue = createEmailQueue();
+
 beforeAll(cleanup);
-afterAll(cleanup);
+afterAll(async () => {
+	await cleanup();
+	await emailQueue.obliterate({ force: true });
+	await emailQueue.close();
+	await closeFeatureConnections();
+});
 
 /**
  * The path must be the full mounted one. better-auth matches the incoming URL
@@ -64,13 +70,26 @@ describe("POST /api/auth/sign-up/email", () => {
 		expect(response.status).toBe(200);
 		expect(response.headers.get("set-cookie")).toContain("better-auth");
 
-		const authUser = await getAuthUserByEmail(EMAIL);
+		const authUser = await findAccountByEmail(EMAIL);
 		expect(authUser).not.toBeNull();
 
 		// The user.create.after hook ran and split the name.
-		expect(await getUserById(authUser?.id as string)).toMatchObject({
+		expect(await getUserProfile(authUser?.id as string)).toMatchObject({
 			firstName: "Ada",
 			lastName: "Lovelace",
+		});
+	});
+
+	test("enqueues the welcome email for the worker", async () => {
+		const authUser = await findAccountByEmail(EMAIL);
+		const job = await emailQueue.getJob(`welcome-${authUser?.id}`);
+
+		expect(job?.data).toEqual({
+			type: "send-welcome-email",
+			userId: authUser?.id as string,
+			email: EMAIL,
+			name: "Ada Lovelace",
+			appUrl: "http://localhost:3000",
 		});
 	});
 

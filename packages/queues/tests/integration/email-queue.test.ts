@@ -24,6 +24,7 @@ describe("email queue", () => {
 			userId: `user-${RUN}`,
 			email: `ada-${RUN}@example.test`,
 			name: "Ada Lovelace",
+			appUrl: "http://localhost:3000",
 		} as const;
 
 		const added = await queue.add("send-welcome-email", payload);
@@ -42,6 +43,7 @@ describe("email queue", () => {
 			userId: `user-${RUN}-defaults`,
 			email: `defaults-${RUN}@example.test`,
 			name: "Ada",
+			appUrl: "http://localhost:3000",
 		});
 
 		const read = await queue.getJob(added.id as string);

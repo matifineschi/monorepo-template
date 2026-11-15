@@ -30,6 +30,13 @@
 		"packages/logger": {},
 		"apps/cron": {
 			"entry": ["tests/integration/*.test.ts"]
+		},
+		"packages/features": {
+			"entry": ["src/email/templates/*.tsx", "tests/integration/*.test.ts"]
+		},
+		"packages/infra/email": {},
+		"packages/infra/auth": {
+			"entry": ["src/cli-config.ts"]
 		}
 	}
 }

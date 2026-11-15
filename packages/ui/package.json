@@ -16,7 +16,8 @@
 	},
 	"exports": {
 		"./globals.css": "./src/globals.css",
-		"./providers": "./src/providers.tsx"
+		"./providers": "./src/providers.tsx",
+		"./theme": "./src/theme.ts"
 	},
 	"dependencies": {
 		"@astryxdesign/core": "catalog:",

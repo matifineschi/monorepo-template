@@ -25,7 +25,9 @@
 				"QUEUE_PREFIX",
 				"REDIS_URL",
 				"STORAGE_*",
-				"WORKER_CONCURRENCY"
+				"WORKER_CONCURRENCY",
+				"EMAIL_*",
+				"RESEND_API_KEY"
 			]
 		},
 		"typecheck": {
@@ -54,7 +56,9 @@
 				"TEST_DATABASE_ADMIN_URL",
 				"TEST_LOG_LEVEL",
 				"TEST_REDIS_URL",
-				"TEST_STORAGE_ENDPOINT"
+				"TEST_STORAGE_ENDPOINT",
+				"EMAIL_*",
+				"RESEND_API_KEY"
 			]
 		},
 		"clean": {

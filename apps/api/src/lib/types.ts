@@ -1,8 +1,6 @@
-import type { auth } from "@repo/auth";
-
-type AuthSession = typeof auth.$Infer.Session;
+import type { Session } from "@repo/features/auth";
 
 export type AppVariables = {
-	user: AuthSession["user"] | null;
-	session: AuthSession["session"] | null;
+	user: Session["user"] | null;
+	session: Session["session"] | null;
 };

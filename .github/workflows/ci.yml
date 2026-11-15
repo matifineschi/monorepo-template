@@ -153,6 +153,7 @@ jobs:
             -e STORAGE_SECRET_ACCESS_KEY=minioadmin \
             -e STORAGE_BUCKET=ci-smoke \
             -e STORAGE_FORCE_PATH_STYLE=true \
+            -e EMAIL_FROM="CI Smoke <onboarding@resend.dev>" \
             api:ci
 
           # /ready, not /health: liveness only proves the process answers, while

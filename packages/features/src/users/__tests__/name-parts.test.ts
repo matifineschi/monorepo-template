@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { getNameParts } from "../operations/users";
+import { getNameParts } from "../name-parts";
 
 /**
  * better-auth hands us whatever the sign-up form produced — `name` may be

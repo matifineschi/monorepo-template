@@ -8,15 +8,21 @@ S3-compatible object storage. Silo locally, any S3 API in production.
 src/
   env.ts      owns the STORAGE_* variables, exported as `storageEnv`
   client.ts   lazy S3Client singleton
-  keys.ts     key derivation and ownership — the authorization model
   objects.ts  put / get / list / delete / createUploadUrl
+  health.ts   pingBucket, for readiness
   testing/    per-run test buckets, via @repo/storage/testing/bucket
 ```
 
-This package is the only place in the repo allowed to import `@aws-sdk/*`.
-Biome's `noRestrictedImports` enforces that: a route handler that reaches for
-the SDK directly bypasses `isOwnedBy`, and the point of a storage package is
-that the authorization boundary has exactly one home.
+This package is the only place in the repo allowed to import `@aws-sdk/*`, and
+only `@repo/features/files` imports this package — apps never do. Biome's
+`noRestrictedImports` enforces both: a route handler that reached for the SDK
+or for these functions directly would bypass `isOwnedBy`.
+
+**This package has no opinion about keys.** It stores, lists and deletes
+whatever key it is given. Which keys a user may touch — the layout and the
+ownership check below — is policy, and lives in
+`packages/features/src/files/keys.ts`. See
+[docs/architecture.md](../../../docs/architecture.md).
 
 ## The upload flow
 
@@ -30,8 +36,8 @@ This is why `apps/web/env.ts` deliberately does not extend `storageEnv` — the 
 server has no reason to hold credentials, and giving it any would defeat the
 point of presigning.
 
-Deletion is asynchronous: the API enqueues `delete-file` and `apps/workers`
-performs it. Bucket deletes are slow and fail independently of the request, so
+Deletion is asynchronous: `requestFileDeletion` (features) checks ownership and
+enqueues `delete-file`, and `apps/workers` runs `processFileJob`. Bucket deletes are slow and fail independently of the request, so
 the response shouldn't block on one.
 
 ## Bucket layout, and why keys are derived server-side
@@ -59,7 +65,8 @@ record. So:
 
 **Never build a key from a client-supplied string, and never add a route that
 accepts a key without calling `isOwnedBy` first.** A caller who can choose their
-own key can read or delete anyone's objects. `src/keys.ts` carries that weight
+own key can read or delete anyone's objects.
+`packages/features/src/files/keys.ts` carries that weight
 and has the most thorough unit test in the repo; treat changes to it as security
 changes.
 
@@ -99,7 +106,7 @@ need `localhost:9000` — if a deployment ever needs both, that is a second
 ## Testing
 
 ```sh
-bun run --filter @repo/storage test              # keys.ts — no bucket needed
+bun run --filter @repo/features test             # keys.ts — no bucket needed
 bun run test-infra:up
 bun run --filter @repo/storage test:integration  # real Silo
 ```

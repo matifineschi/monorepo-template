@@ -4,7 +4,8 @@
 		"noEmit": true,
 		"types": ["bun-types", "node"],
 		"module": "ESNext",
-		"moduleResolution": "bundler"
+		"moduleResolution": "bundler",
+		"jsx": "react-jsx"
 	},
 	"include": ["src", "tests", "test-setup.ts", "test-setup.integration.ts"],
 	"exclude": ["node_modules", "dist"]

@@ -5,7 +5,7 @@
 	"scripts": {
 		"clean": "git clean -xdf .cache .turbo dist node_modules",
 		"typecheck": "tsc --noEmit",
-		"test": "bun test src",
+		"test": "bun test src --pass-with-no-tests",
 		"test:integration": "bun test --preload ./test-setup.integration.ts tests/integration",
 		"db:generate": "drizzle-kit generate --config=drizzle.config.ts",
 		"db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",

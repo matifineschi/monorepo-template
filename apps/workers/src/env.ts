@@ -1,6 +1,7 @@
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
+import { emailEnv } from "@repo/email/env";
 import { shouldSkipEnvValidation } from "@repo/env";
 import { baseEnv } from "@repo/env/base";
 import { loggerEnv } from "@repo/logger/env";
@@ -9,7 +10,7 @@ import { storageEnv } from "@repo/storage/env";
 
 export const env = createEnv({
 	emptyStringAsUndefined: true,
-	extends: [baseEnv, queuesEnv, storageEnv, loggerEnv],
+	extends: [baseEnv, emailEnv, queuesEnv, storageEnv, loggerEnv],
 	runtimeEnv: process.env,
 	server: {
 		/** Jobs processed in parallel per worker. */

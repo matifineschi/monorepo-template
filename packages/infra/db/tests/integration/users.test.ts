@@ -35,9 +35,13 @@ beforeAll(async () => {
 afterAll(cleanup);
 
 describe("user provisioning", () => {
-	test("creates the public row with split names", async () => {
+	test("creates the public row", async () => {
 		expect(
-			await createUser({ id: AUTH_USER_ID, name: "Ada Lovelace", email }),
+			await createUser({
+				id: AUTH_USER_ID,
+				firstName: "Ada",
+				lastName: "Lovelace",
+			}),
 		).toEqual({ created: true });
 
 		expect(await getUserById(AUTH_USER_ID)).toEqual({
@@ -55,7 +59,11 @@ describe("user provisioning", () => {
 	 */
 	test("is idempotent on a repeat call", async () => {
 		expect(
-			await createUser({ id: AUTH_USER_ID, name: "Ada Lovelace", email }),
+			await createUser({
+				id: AUTH_USER_ID,
+				firstName: "Ada",
+				lastName: "Lovelace",
+			}),
 		).toEqual({ created: false });
 
 		expect((await getUserById(AUTH_USER_ID))?.firstName).toBe("Ada");
@@ -70,6 +78,10 @@ describe("user provisioning", () => {
 		expect(await getUserById(AUTH_USER_ID)).toBeNull();
 
 		// Re-create so afterAll's FK-ordered cleanup still has the shape it expects.
-		await createUser({ id: AUTH_USER_ID, name: "Ada Lovelace", email });
+		await createUser({
+			id: AUTH_USER_ID,
+			firstName: "Ada",
+			lastName: "Lovelace",
+		});
 	});
 });
