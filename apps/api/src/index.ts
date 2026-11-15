@@ -2,8 +2,10 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { logger } from "@repo/logger";
+import { closeRedisProbe } from "@repo/queues";
 
 import { env } from "./env";
+import { closeQueues } from "./lib/queues";
 import type { AppVariables } from "./lib/types";
 import { requestLogger } from "./middleware/request-logger";
 import { sessionMiddleware } from "./middleware/session";
@@ -44,9 +46,50 @@ app.route("/api/auth", authRoutes);
 app.route("/me", meRoutes);
 app.route("/files", filesRoutes);
 
-logger.info({ port: env.PORT, env: env.NODE_ENV }, "API server listening");
+/**
+ * How long to let in-flight requests finish before exiting anyway. Must stay
+ * under the orchestrator's own grace period (Kubernetes defaults to 30s, most
+ * platforms to something similar), or the process is SIGKILLed mid-drain and
+ * the drain was pointless.
+ */
+const DRAIN_TIMEOUT_MS = 10_000;
 
-export default {
-	port: env.PORT,
-	fetch: app.fetch,
-};
+/**
+ * `import.meta.main` is load-bearing. Integration tests import this module for
+ * `app`, and binding a port on import would make every test run fight over
+ * 3001 — and fail outright when a dev server already holds it.
+ */
+if (import.meta.main) {
+	const server = Bun.serve({ fetch: app.fetch, port: env.PORT });
+
+	logger.info({ env: env.NODE_ENV, port: server.port }, "API server listening");
+
+	let shuttingDown = false;
+
+	/**
+	 * Without this, a deploy's SIGTERM kills in-flight requests. The client sees
+	 * a connection reset, which is indistinguishable from a network fault, so it
+	 * gets diagnosed as flakiness rather than as every deploy dropping requests.
+	 */
+	async function shutdown(signal: string): Promise<void> {
+		if (shuttingDown) return;
+		shuttingDown = true;
+		logger.info({ signal }, "API server shutting down");
+
+		try {
+			// `false`: stop accepting connections but let in-flight requests finish.
+			await Promise.race([
+				server.stop(false),
+				new Promise((resolve) => setTimeout(resolve, DRAIN_TIMEOUT_MS)),
+			]);
+			await Promise.all([closeQueues(), closeRedisProbe()]);
+		} catch (error) {
+			logger.error({ err: error }, "Error during shutdown");
+		}
+
+		process.exit(0);
+	}
+
+	process.on("SIGTERM", () => void shutdown("SIGTERM"));
+	process.on("SIGINT", () => void shutdown("SIGINT"));
+}
