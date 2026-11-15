@@ -48,6 +48,26 @@ jobs:
       # The same compose file developers run, rather than GitHub `services:`
       # blocks. Service containers cannot take a `command`, which MinIO needs,
       # and duplicating the stack in workflow YAML means CI and local drift.
+      # pg_dump refuses to dump from a server newer than itself, and the runner
+      # ships a 16 client against our 17 server. The backup tests fail when CI
+      # is set and this client is missing; a laptop without it still skips.
+      - name: Install the PostgreSQL 17 client
+        run: |
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+          pg_dump --version
+
+      # rclone drives the bucket backup. The backup tests fail when CI is set
+      # and it is missing; a laptop without it still skips.
+      - name: Install rclone
+        run: |
+          sudo apt-get install -y rclone
+          rclone version | head -1
+
       - name: Start the test stack
         run: bun run test-infra:up
 
@@ -78,3 +98,75 @@ jobs:
           cp packages/infra/db/.env.example packages/infra/db/.env
 
       - run: bun run build
+
+  images:
+    name: Images build and boot
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    needs: check
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+      - uses: docker/setup-buildx-action@v3
+
+      # Named targets rather than a matrix: the four images share a build stage,
+      # so one runner with one warm layer cache is faster than four cold ones.
+      - name: Build images
+        run: |
+          for app in api workers cron; do
+            docker build -f "apps/$app/Dockerfile" -t "$app:ci" .
+          done
+          docker build -f apps/web/Dockerfile -t web:ci .
+
+      # The point of this job. A Dockerfile that builds proves nothing about
+      # whether the thing inside it starts, respects PORT, or can reach its
+      # dependencies — which is exactly the class of problem that otherwise
+      # surfaces for the first time in a deploy.
+      - name: Start the test stack
+        run: bun run test-infra:up
+
+      # minio/mc is gone from Docker Hub. mc ships inside the Silo image the
+      # test stack already pulled; keep this tag in step with
+      # docker-compose.test.yml.
+      - name: Create the smoke-test bucket
+        run: |
+          docker run --rm --network host --entrypoint sh \
+            docker.io/pgsty/silo:RELEASE.2026-11-12T00-00-00Z -c \
+            "mc alias set t http://localhost:59002 minioadmin minioadmin && \
+             mc mb --ignore-existing t/ci-smoke"
+
+      - name: Migrate the smoke-test database
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:54322/postgres
+        run: bun run --filter @repo/db db:migrate
+
+      - name: Boot the API image and wait for readiness
+        run: |
+          docker run -d --name api-smoke --network host \
+            -e DATABASE_URL=postgres://postgres:postgres@localhost:54322/postgres \
+            -e REDIS_URL=redis://localhost:63792 \
+            -e BETTER_AUTH_URL=http://localhost:3000 \
+            -e BETTER_AUTH_SECRET=ci-smoke-secret-not-for-production \
+            -e CORS_ORIGIN=http://localhost:3000 \
+            -e STORAGE_ENDPOINT=http://localhost:59002 \
+            -e STORAGE_ACCESS_KEY_ID=minioadmin \
+            -e STORAGE_SECRET_ACCESS_KEY=minioadmin \
+            -e STORAGE_BUCKET=ci-smoke \
+            -e STORAGE_FORCE_PATH_STYLE=true \
+            api:ci
+
+          # /ready, not /health: liveness only proves the process answers, while
+          # readiness proves it reached Postgres, Redis and the bucket.
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:3001/ready > /tmp/ready.json; then
+              echo "ready after ${attempt}s:"; cat /tmp/ready.json; exit 0
+            fi
+            sleep 1
+          done
+          echo "API never became ready; container logs:"; docker logs api-smoke
+          curl -s http://localhost:3001/ready || true
+          exit 1
+
+      - name: Container logs
+        if: failure()
+        run: docker logs api-smoke || true
