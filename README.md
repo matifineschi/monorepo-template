@@ -1,6 +1,6 @@
 # Monorepo Template
 
-A full-stack TypeScript monorepo boilerplate built with Turborepo, Bun, Next.js, Hono, Drizzle, and better-auth.
+A full-stack TypeScript monorepo boilerplate built with Turborepo, Bun, Next.js, Hono, Drizzle, better-auth and Resend. All business logic lives in one package, `@repo/features`, which every app calls — see [docs/architecture.md](./docs/architecture.md).
 
 > Working in this repo with an AI agent? [AGENTS.md](./AGENTS.md) is the single source of truth for conventions.
 
@@ -15,7 +15,8 @@ A full-stack TypeScript monorepo boilerplate built with Turborepo, Bun, Next.js,
 - **Deployment**: one Dockerfile per app; no platform lock-in
 - **Database**: [PostgreSQL 17](https://www.postgresql.org) via Docker
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team) with migrations and RLS policies
-- **Auth**: [better-auth](https://www.better-auth.com) (email + password)
+- **Auth**: [better-auth](https://www.better-auth.com) (email + password, password reset)
+- **Email**: [Resend](https://resend.com) with [React Email](https://react.email) templates styled from the Astryx theme; logs instead of sending in development
 - **File storage**: S3-compatible — [Silo](https://silo.pgsty.com) (MinIO-compatible) locally, any S3 API in production
 - **Env validation**: [@t3-oss/env](https://env.t3.gg) + [Zod](https://zod.dev), validated at boot
 - **Logging**: [pino](https://getpino.io) — structured, one config, every server process
@@ -79,10 +80,11 @@ Postgres listens on **5430**, not the default 5432, to avoid clashing with a loc
 apps/
   web/              Next.js frontend — public pages, auth flow, dashboard
   api/              Hono backend API — REST endpoints, CORS, presigned uploads
-  workers/          BullMQ workers — welcome email, async object cleanup
+  workers/          BullMQ workers — wiring for the email and file queues
   cron/             One-shot infra jobs — database + bucket backups and restore checks
 packages/
-  ui/               Astryx theme layer (globals.css + providers)
+  features/         All business logic — auth, users, email, files, system
+  ui/               Astryx theme layer (globals.css, providers, theme)
   queues/           BullMQ queue definitions and job payload types
   utils/            createError + Result — the shared error model
   logger/           pino logger used by every server process
@@ -90,9 +92,16 @@ packages/
   typescript-config/ Shared TypeScript configurations
   infra/
     db/             Drizzle ORM — schema, migrations, operations DAL
-    auth/           better-auth — authentication config and client
+    auth/           better-auth — createAuth() and the browser client
     storage/        S3-compatible object storage
+    email/          Resend — render, send, retry
 ```
+
+Imports point down: **apps → `@repo/features` → `packages/infra/*`**. Apps never
+import an infra package (Biome enforces it), so the database, auth library, bucket
+and mail provider are each one package's concern. The full rules, the
+exceptions and "where does this code go?" are in
+[docs/architecture.md](./docs/architecture.md).
 
 ## Scripts
 
@@ -124,12 +133,12 @@ Every app owns a `.env.example` documenting what it needs and why. There is no
 root `.env` — under `turbo run dev` each app runs with its own workspace as cwd
 and only reads from there.
 
-| File                                                               | Owns                                                  |
-| ------------------------------------------------------------------ | ----------------------------------------------------- |
-| [apps/web/.env.example](./apps/web/.env.example)                   | Database, auth, `NEXT_PUBLIC_APP_URL`                 |
-| [apps/api/.env.example](./apps/api/.env.example)                   | Database, auth, Redis, storage, CORS, port, log level |
-| [apps/workers/.env.example](./apps/workers/.env.example)           | Redis, storage, concurrency, log level                |
-| [packages/infra/db/.env.example](./packages/infra/db/.env.example) | `DATABASE_URL` for drizzle-kit                        |
+| File                                                               | Owns                                                         |
+| ------------------------------------------------------------------ | ------------------------------------------------------------ |
+| [apps/web/.env.example](./apps/web/.env.example)                   | Database, auth, Redis, email, `NEXT_PUBLIC_APP_URL`          |
+| [apps/api/.env.example](./apps/api/.env.example)                   | Database, auth, Redis, storage, email, CORS, port, log level |
+| [apps/workers/.env.example](./apps/workers/.env.example)           | Redis, storage, email, concurrency, log level                |
+| [packages/infra/db/.env.example](./packages/infra/db/.env.example) | `DATABASE_URL` for drizzle-kit                               |
 
 Values are validated with Zod at process start, so a missing or malformed
 variable fails immediately with the variable named — not later, mid-request.
@@ -172,6 +181,25 @@ authorization boundary. Deletion is queued and performed by `apps/workers`.
 Storage is stateless — there is intentionally no `files` table, since not every
 project wants file metadata in Postgres. See
 [packages/infra/storage/README.md](./packages/infra/storage/README.md).
+
+## Email
+
+`@repo/email` sends through [Resend](https://resend.com); `@repo/features/email`
+decides what is sent. Two emails ship: **welcome** (queued at sign-up, sent by
+`apps/workers`) and **password reset** (`/forgot-password` → emailed one-time
+link → `/reset-password`). Templates are React Email components styled only
+from the resolved Astryx theme, so they match the app.
+
+With `EMAIL_TRANSPORT=log` (the default) every email is rendered to the log
+instead of sent — no account needed. To send for real, create a
+**sending-access** key at [resend.com/api-keys](https://resend.com/api-keys),
+then in `apps/{web,api,workers}/.env` set `EMAIL_TRANSPORT=resend` and
+`RESEND_API_KEY`. Until you verify a domain, `EMAIL_FROM` must stay
+`onboarding@resend.dev`, which only delivers to your own Resend address.
+
+```sh
+bun run --filter @repo/features email:dev   # preview templates at :3030
+```
 
 ## Deployment
 
