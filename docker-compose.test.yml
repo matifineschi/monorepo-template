@@ -27,8 +27,10 @@ services:
       -c synchronous_commit=off
       -c full_page_writes=off
       -c max_connections=200
+    # Loopback only. Publishing 0.0.0.0 makes the GitHub runner's Docker
+    # program the port for both address stacks and fail the second bind.
     ports:
-      - "54322:5432"
+      - "127.0.0.1:54322:5432"
     # A named volume, not tmpfs, on purpose: the migrated template database that
     # `provisionTestDatabase` clones from survives a restart, so a run only pays
     # for migrations when a migration actually changed.
@@ -43,7 +45,7 @@ services:
   test-redis:
     image: redis:7-alpine
     ports:
-      - "63792:6379"
+      - "127.0.0.1:63792:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 2s
@@ -60,8 +62,8 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - "59002:9000"
-      - "59003:9001"
+      - "127.0.0.1:59002:9000"
+      - "127.0.0.1:59003:9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 2s
