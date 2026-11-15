@@ -2,6 +2,7 @@ export {
 	createRedisConnection,
 	queueConnectionOptions,
 } from "./connection";
+export { closeRedisProbe, pingRedis } from "./health";
 export type {
 	DeleteFileJob,
 	JobPayload,

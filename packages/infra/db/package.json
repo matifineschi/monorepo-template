@@ -52,6 +52,11 @@
 			"types": "./src/testing/database.ts",
 			"import": "./src/testing/database.ts",
 			"default": "./src/testing/database.ts"
+		},
+		"./operations/health": {
+			"types": "./src/operations/health.ts",
+			"import": "./src/operations/health.ts",
+			"default": "./src/operations/health.ts"
 		}
 	},
 	"dependencies": {
